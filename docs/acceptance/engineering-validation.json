@@ -1,0 +1,52 @@
+{
+  "recordedAt": "2026-10-23T07:34:15.679080+00:00",
+  "testedCommit": "3608deceeb77c070226533d1360541d4d86f4349",
+  "ciRun": "https://github.com/adolfheir/Meno/actions/runs/39917747674",
+  "ciConclusion": "success",
+  "builds": {
+    "arm64": {
+      "xcode": "Xcode 26.6\nBuild version 17F113",
+      "swift": "Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)\nTarget: arm64-apple-macosx26.0",
+      "sourceSHA256": "76de66e2dd3d68426dd9f0e098f1deabe7f2c0b77ff5dca775e4c2a640aa4f0e",
+      "testsPassed": 55,
+      "integrationChecks": [
+        "mcp-discovery",
+        "mcp-smoke",
+        "retry-smoke",
+        "runtime-smoke",
+        "sigterm-and-restart"
+      ],
+      "releasePackageVerified": true
+    },
+    "x86_64": {
+      "xcode": "Xcode 26.6\nBuild version 17F113",
+      "swift": "Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)\nTarget: x86_64-apple-macosx26.0",
+      "sourceSHA256": "76de66e2dd3d68426dd9f0e098f1deabe7f2c0b77ff5dca775e4c2a640aa4f0e",
+      "testsPassed": 55,
+      "integrationChecks": [
+        "mcp-discovery",
+        "mcp-smoke",
+        "retry-smoke",
+        "runtime-smoke",
+        "sigterm-and-restart"
+      ],
+      "releasePackageVerified": true
+    }
+  },
+  "localDesktop": {
+    "dualScreenPanelsObserved": 2,
+    "mcpClientExitedBeforeDelivery": true,
+    "escapeSnoozeSeconds": 300,
+    "snoozedOccurrenceLaterAcknowledged": true,
+    "testRemindersCancelled": 5,
+    "activeTestRemindersRemaining": 0,
+    "appearance": "neutral smoke grey"
+  },
+  "notVerified": [
+    "notification delivery and notification actions: authorization denied",
+    "macOS 14/15 interactive desktop",
+    "Spaces, Stage Manager, display hot-plug",
+    "machine sleep/relogin/login item execution",
+    "Developer ID notarization and third-party Mac distribution"
+  ]
+}
