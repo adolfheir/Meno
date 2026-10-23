@@ -1,0 +1,41 @@
+{
+  "cancelledTestIDs": [
+    {
+      "id": "51291DAE-D74E-4B84-9DF5-6A9F3032EE9C",
+      "result": true
+    },
+    {
+      "id": "A7151B01-8B09-4019-B2E9-D626944D4869",
+      "result": true
+    },
+    {
+      "id": "7A69F13A-DD9F-4DE4-ADFF-3FBDE860B2CB",
+      "result": true
+    },
+    {
+      "id": "B32A244D-9902-45D9-B7BF-5A29BE89EAF9",
+      "result": true
+    },
+    {
+      "id": "47CC8D88-37E9-4D88-B3A5-E364D6CDEF1F",
+      "result": true
+    },
+    {
+      "id": "AD76EC8D-922C-4200-B837-415D82990A30",
+      "result": true
+    },
+    {
+      "id": "1B7F51C0-AA2B-417F-A04F-51FFC9D2AEE3",
+      "result": true
+    },
+    {
+      "id": "162B3D5C-69D7-4A24-90D8-2297AEEC1E67",
+      "result": true
+    },
+    {
+      "id": "FB927FD3-C8E3-480D-BEF7-AC78A065CE56",
+      "result": true
+    }
+  ],
+  "method": "cancel only; no records, history or files deleted"
+}

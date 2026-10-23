@@ -1,0 +1,41 @@
+[
+  {
+    "at": "2026-10-23T04:41:28.309109+00:00",
+    "check": "disabled_save_and_missed_without_catch_up",
+    "result": {
+      "saved": true,
+      "armed": false,
+      "overlays": 0
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:28.537205+00:00",
+    "check": "type_specific_armed_conditions",
+    "result": {
+      "fullscreen": true,
+      "system": false,
+      "systemReason": "系统通知未授权，请在设置中授权"
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:28.802983+00:00",
+    "check": "edit_type_time_and_pause",
+    "result": {
+      "id": "9F66529D-A197-440B-84BC-257435898A17",
+      "armed": false
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:28.807957+00:00",
+    "check": "cli_invalid_input_nonzero",
+    "result": 1
+  },
+  {
+    "at": "2026-10-23T04:41:29.796550+00:00",
+    "check": "normal_quit_process_exit_and_auto_start_restores_preference",
+    "result": {
+      "before": true,
+      "after": true
+    }
+  }
+]

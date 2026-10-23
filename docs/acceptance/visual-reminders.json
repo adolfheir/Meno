@@ -1,0 +1,100 @@
+[
+  {
+    "armed": true,
+    "blockedReason": null,
+    "current": {
+      "armed": true,
+      "blockedReason": null,
+      "createdAt": "2026-10-23T04:25:04.808Z",
+      "id": "AD76EC8D-922C-4200-B837-415D82990A30",
+      "isCancelled": false,
+      "isEnabled": true,
+      "nextTriggerAt": "2026-10-23T04:25:06.092Z",
+      "note": "照顾好自己，再继续眼前的事。",
+      "reminderType": "fullscreen",
+      "revision": 1,
+      "saved": true,
+      "schedule": {
+        "date": "2026-10-23T04:25:06.092Z",
+        "hour": 12,
+        "minute": 25,
+        "rule": "once"
+      },
+      "source": "cli",
+      "title": "喝口水，休息一下",
+      "updatedAt": "2026-10-23T04:25:04.808Z"
+    },
+    "id": "AD76EC8D-922C-4200-B837-415D82990A30",
+    "nextTriggerAt": "2026-10-23T04:25:06.092Z",
+    "reminder": {
+      "createdAt": "2026-10-23T04:25:04.808Z",
+      "id": "AD76EC8D-922C-4200-B837-415D82990A30",
+      "isCancelled": false,
+      "isEnabled": true,
+      "note": "照顾好自己，再继续眼前的事。",
+      "reminderType": "fullscreen",
+      "revision": 1,
+      "schedule": {
+        "date": "2026-10-23T04:25:06.092Z",
+        "hour": 12,
+        "minute": 25,
+        "rule": "once"
+      },
+      "source": "cli",
+      "title": "喝口水，休息一下",
+      "updatedAt": "2026-10-23T04:25:04.808Z"
+    },
+    "reminderType": "fullscreen",
+    "replayed": false,
+    "saved": true
+  },
+  {
+    "armed": true,
+    "blockedReason": null,
+    "current": {
+      "armed": true,
+      "blockedReason": null,
+      "createdAt": "2026-10-23T04:25:05.114Z",
+      "id": "47CC8D88-37E9-4D88-B3A5-E364D6CDEF1F",
+      "isCancelled": false,
+      "isEnabled": true,
+      "nextTriggerAt": "2026-10-23T04:25:06.092Z",
+      "note": "换个姿势，给自己一分钟。",
+      "reminderType": "fullscreen",
+      "revision": 1,
+      "saved": true,
+      "schedule": {
+        "date": "2026-10-23T04:25:06.092Z",
+        "hour": 12,
+        "minute": 25,
+        "rule": "once"
+      },
+      "source": "cli",
+      "title": "站起来，活动一下",
+      "updatedAt": "2026-10-23T04:25:05.114Z"
+    },
+    "id": "47CC8D88-37E9-4D88-B3A5-E364D6CDEF1F",
+    "nextTriggerAt": "2026-10-23T04:25:06.092Z",
+    "reminder": {
+      "createdAt": "2026-10-23T04:25:05.114Z",
+      "id": "47CC8D88-37E9-4D88-B3A5-E364D6CDEF1F",
+      "isCancelled": false,
+      "isEnabled": true,
+      "note": "换个姿势，给自己一分钟。",
+      "reminderType": "fullscreen",
+      "revision": 1,
+      "schedule": {
+        "date": "2026-10-23T04:25:06.092Z",
+        "hour": 12,
+        "minute": 25,
+        "rule": "once"
+      },
+      "source": "cli",
+      "title": "站起来，活动一下",
+      "updatedAt": "2026-10-23T04:25:05.114Z"
+    },
+    "reminderType": "fullscreen",
+    "replayed": false,
+    "saved": true
+  }
+]

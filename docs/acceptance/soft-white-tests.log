@@ -1,0 +1,93 @@
+Building for debugging...
+[Pre-planning 1 / 214]
+[Creating build graph]
+[1 / 4]
+[5 / 19] RemindersPlugin
+[9 / 23] RemindersPlugin
+[14 / 24] RemindersPlugin
+[15 / 25] RemindersPlugin
+[20 / 25] RemindersTests-product
+[24 / 29] RemindersTests-product
+[26 / 29] RemindersTests-product
+[28 / 32] RemindersTests-product
+Build complete! (4.03秒)
+Test Suite 'All tests' started at 2026-10-23 14:20:12.616.
+Test Suite 'RemindersTests.xctest' started at 2026-10-23 14:20:12.616.
+Test Suite 'NotificationSchedulerTests' started at 2026-10-23 14:20:12.616.
+Test Case '-[RemindersTests.NotificationSchedulerTests testOnlySelectedTypeIsSubmittedAndStopDoesNotTouchOtherModules]' started.
+Test Case '-[RemindersTests.NotificationSchedulerTests testOnlySelectedTypeIsSubmittedAndStopDoesNotTouchOtherModules]' passed (0.001 seconds).
+Test Case '-[RemindersTests.NotificationSchedulerTests testPastSubmittedWithoutDeliveryEvidenceIsNotResent]' started.
+Test Case '-[RemindersTests.NotificationSchedulerTests testPastSubmittedWithoutDeliveryEvidenceIsNotResent]' passed (0.000 seconds).
+Test Case '-[RemindersTests.NotificationSchedulerTests testPermissionDenialKeepsSavedItemsOutOfSystemQueue]' started.
+Test Case '-[RemindersTests.NotificationSchedulerTests testPermissionDenialKeepsSavedItemsOutOfSystemQueue]' passed (0.000 seconds).
+Test Case '-[RemindersTests.NotificationSchedulerTests testReconcileDoesNotResubmitExistingOrDeliveredRequests]' started.
+Test Case '-[RemindersTests.NotificationSchedulerTests testReconcileDoesNotResubmitExistingOrDeliveredRequests]' passed (0.000 seconds).
+Test Case '-[RemindersTests.NotificationSchedulerTests testRollingQueueKeepsNearestSixtyAndReportsCapacity]' started.
+Test Case '-[RemindersTests.NotificationSchedulerTests testRollingQueueKeepsNearestSixtyAndReportsCapacity]' passed (0.000 seconds).
+Test Case '-[RemindersTests.NotificationSchedulerTests testStopWaitsForSuspendedSystemWriteThenRemovesIt]' started.
+Test Case '-[RemindersTests.NotificationSchedulerTests testStopWaitsForSuspendedSystemWriteThenRemovesIt]' passed (0.000 seconds).
+Test Case '-[RemindersTests.NotificationSchedulerTests testSubmissionFailureIsReportedAndCanRecover]' started.
+Test Case '-[RemindersTests.NotificationSchedulerTests testSubmissionFailureIsReportedAndCanRecover]' passed (0.001 seconds).
+Test Case '-[RemindersTests.NotificationSchedulerTests testTypeOrTimeEditRevokesOldStableID]' started.
+Test Case '-[RemindersTests.NotificationSchedulerTests testTypeOrTimeEditRevokesOldStableID]' passed (0.000 seconds).
+Test Suite 'NotificationSchedulerTests' passed at 2026-10-23 14:20:12.621.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+Test Suite 'ReminderScheduleTests' started at 2026-10-23 14:20:12.621.
+Test Case '-[RemindersTests.ReminderScheduleTests testBookRejectsDuplicateIDsAndUnknownSchema]' started.
+Test Case '-[RemindersTests.ReminderScheduleTests testBookRejectsDuplicateIDsAndUnknownSchema]' passed (0.000 seconds).
+Test Case '-[RemindersTests.ReminderScheduleTests testDailyRollsForwardAfterTimeHasPassed]' started.
+Test Case '-[RemindersTests.ReminderScheduleTests testDailyRollsForwardAfterTimeHasPassed]' passed (0.001 seconds).
+Test Case '-[RemindersTests.ReminderScheduleTests testDSTFoldOnlyUsesFirstOccurrenceOfWallClockTime]' started.
+Test Case '-[RemindersTests.ReminderScheduleTests testDSTFoldOnlyUsesFirstOccurrenceOfWallClockTime]' passed (0.001 seconds).
+Test Case '-[RemindersTests.ReminderScheduleTests testDSTGapAdvancesToNextValidTime]' started.
+Test Case '-[RemindersTests.ReminderScheduleTests testDSTGapAdvancesToNextValidTime]' passed (0.000 seconds).
+Test Case '-[RemindersTests.ReminderScheduleTests testOnceInPastHasNoNextDateOrSystemRequest]' started.
+Test Case '-[RemindersTests.ReminderScheduleTests testOnceInPastHasNoNextDateOrSystemRequest]' passed (0.000 seconds).
+Test Case '-[RemindersTests.ReminderScheduleTests testRecurringWallClockTimeSurvivesTimeZoneChange]' started.
+Test Case '-[RemindersTests.ReminderScheduleTests testRecurringWallClockTimeSurvivesTimeZoneChange]' passed (0.000 seconds).
+Test Case '-[RemindersTests.ReminderScheduleTests testWeekdaysSkipWeekendAndCreateFiveRequests]' started.
+Test Case '-[RemindersTests.ReminderScheduleTests testWeekdaysSkipWeekendAndCreateFiveRequests]' passed (0.000 seconds).
+Test Suite 'ReminderScheduleTests' passed at 2026-10-23 14:20:12.624.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds
+Test Suite 'ReminderServiceTests' started at 2026-10-23 14:20:12.624.
+Test Case '-[RemindersTests.ReminderServiceTests testAppEnableReplayReportsOriginalIntentWithoutChangingNewerPreference]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testAppEnableReplayReportsOriginalIntentWithoutChangingNewerPreference]' passed (0.015 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testCorruptLegacyAndUnknownSQLiteVersionAreNeverReplaced]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testCorruptLegacyAndUnknownSQLiteVersionAreNeverReplaced]' passed (0.013 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testDifferentPayloadWithSameRequestIDConflicts]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testDifferentPayloadWithSameRequestIDConflicts]' passed (0.005 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testDisabledCreateDoesNotEnableAndExplicitEnableIsAtomicWithRequest]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testDisabledCreateDoesNotEnableAndExplicitEnableIsAtomicWithRequest]' passed (0.006 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testIdempotentRetryKeepsOriginalAbsoluteTimeAfterRestart]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testIdempotentRetryKeepsOriginalAbsoluteTimeAfterRestart]' passed (0.005 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testIntentionalPauseSkipsMissedItemButCrashRecoveryKeepsRecentOne]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testIntentionalPauseSkipsMissedItemButCrashRecoveryKeepsRecentOne]' passed (0.012 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testLegacyMigrationBacksUpAndPreservesIDsAndIsRepeatable]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testLegacyMigrationBacksUpAndPreservesIDsAndIsRepeatable]' passed (0.007 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testPartialUpdatePreservesUnspecifiedFieldsAndCancelsOldOccurrence]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testPartialUpdatePreservesUnspecifiedFieldsAndCancelsOldOccurrence]' passed (0.012 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testPreviouslyPlannedItemExpiringDuringPauseIsNeverCaughtUp]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testPreviouslyPlannedItemExpiringDuringPauseIsNeverCaughtUp]' passed (0.009 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testRequestRecordFailureRollsBackReminderAndPreference]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testRequestRecordFailureRollsBackReminderAndPreference]' passed (0.006 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testSnoozeCreatesIndependentInstanceWithoutMovingRecurrence]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testSnoozeCreatesIndependentInstanceWithoutMovingRecurrence]' passed (0.010 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testTimeZoneChangeReplacesRegularPlanAndCanReturnToOriginalZone]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testTimeZoneChangeReplacesRegularPlanAndCanReturnToOriginalZone]' passed (0.012 seconds).
+Test Case '-[RemindersTests.ReminderServiceTests testValidationRejectsConflictingInvalidAndPastSchedules]' started.
+Test Case '-[RemindersTests.ReminderServiceTests testValidationRejectsConflictingInvalidAndPastSchedules]' passed (0.004 seconds).
+Test Suite 'ReminderServiceTests' passed at 2026-10-23 14:20:12.742.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 0.116 (0.117) seconds
+Test Suite 'RemindersModelTests' started at 2026-10-23 14:20:12.742.
+Test Case '-[RemindersTests.RemindersModelTests testReadFailureKeepsLastLoadedItemsAndReportsError]' started.
+Test Case '-[RemindersTests.RemindersModelTests testReadFailureKeepsLastLoadedItemsAndReportsError]' passed (0.005 seconds).
+Test Suite 'RemindersModelTests' passed at 2026-10-23 14:20:12.747.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+Test Suite 'RemindersTests.xctest' passed at 2026-10-23 14:20:12.747.
+	 Executed 29 tests, with 0 failures (0 unexpected) in 0.128 (0.131) seconds
+Test Suite 'All tests' passed at 2026-10-23 14:20:12.747.
+	 Executed 29 tests, with 0 failures (0 unexpected) in 0.128 (0.131) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

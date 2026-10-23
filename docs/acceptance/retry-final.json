@@ -1,0 +1,22 @@
+[
+  {
+    "at": "2026-10-23T04:41:26.115157+00:00",
+    "check": "real_ipc_response_lost_then_same_id_retry",
+    "result": {
+      "id": "96D2E648-4CF3-4DE8-9316-5F054AD7EF23",
+      "replayed": true,
+      "originalTime": "2026-10-23T05:41:25.414Z"
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:26.309094+00:00",
+    "check": "two_independent_mcp_processes_one_transaction",
+    "result": {
+      "id": "B54C9174-5A6C-4E72-930E-B6FBE47CA9FF",
+      "replayed": [
+        false,
+        true
+      ]
+    }
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "archivedTestRecordCount": 31,
+  "archiveDirectory": "/Users/chenyuhang/Library/Application Support/Meno-acceptance-20261023-124414",
+  "originalDataDirectoryExistedBeforeTask": false,
+  "method": "All created test items were cancelled; complete data directory was renamed after normal quit; no data/history files deleted.",
+  "freshStatus": {
+    "appId": "com.meno.reminders",
+    "blockedReason": "后台提醒已暂停",
+    "connectedScreenCount": 2,
+    "defaultReminderType": "system",
+    "enabled": false,
+    "name": "到点提醒",
+    "notificationPermission": "未授权",
+    "overlayContentScreenID": null,
+    "overlayScreenCount": 0,
+    "pendingSystemCount": 0,
+    "presentationSuspended": false,
+    "running": false,
+    "runtimeFailure": null,
+    "systemBlockedReason": "系统通知未授权"
+  },
+  "freshReminderCount": 0
+}

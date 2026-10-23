@@ -1,0 +1,12 @@
+{
+  "recordedAt": "2026-10-23T12:43:29.145668+08:00",
+  "currentSourceMatchesBuild": true,
+  "sourceSHA256": "7566bf898e84dedc098c19cd74c11a93dfde74faf83c89740d231504a1a27436",
+  "archiveSHA256": "068d746d80db4fe457e0c651f1caf246770c9bb3c28c75926c6c7125f02241e2",
+  "installedApp": "/Users/chenyuhang/Applications/Meno.app",
+  "binaryHashes": {
+    "Contents/MacOS/Meno": "d452e1bb4724e2d2c8fc5dfdd2acbd8a3da4e53b738e1c5fd4655cde3df7a8d9",
+    "Contents/Helpers/meno": "85b302e292a52d590828eaca34ccb27785c7dc993bf7e184f6e6c36edda1486f",
+    "Contents/Helpers/meno-mcp": "cfb77d58e3e9b3d001bc8d5443f751e0cd871156dabd09ca7c740723facb9861"
+  }
+}

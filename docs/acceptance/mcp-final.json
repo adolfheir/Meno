@@ -1,0 +1,86 @@
+[
+  {
+    "at": "2026-10-23T04:41:24.011977+00:00",
+    "check": "initialize",
+    "result": {
+      "protocol": "2025-11-25",
+      "server": {
+        "name": "Meno",
+        "title": null,
+        "version": "0.1.0",
+        "websiteUrl": null,
+        "icons": null
+      }
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:24.034763+00:00",
+    "check": "discover_six_tools_and_validate_schemas",
+    "result": [
+      "apps_get_status",
+      "apps_set_enabled",
+      "reminders_cancel",
+      "reminders_create",
+      "reminders_list",
+      "reminders_update"
+    ]
+  },
+  {
+    "at": "2026-10-23T04:41:24.515224+00:00",
+    "check": "create_retry_conflict_system",
+    "result": {
+      "id": "920C559C-5001-4DDD-B343-0C94A94AB38D",
+      "saved": true,
+      "armed": false
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:24.581741+00:00",
+    "check": "create_retry_conflict_fullscreen",
+    "result": {
+      "id": "1BE9A27D-BFD7-4B07-A1DD-EF4AE0ABF93A",
+      "saved": true,
+      "armed": false
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:24.662253+00:00",
+    "check": "update_and_paginated_query",
+    "result": {
+      "total": 19,
+      "nextOffset": 1
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:24.668995+00:00",
+    "check": "business_error_isError",
+    "result": {
+      "error": {
+        "code": "invalid_schedule",
+        "message": "afterSeconds 必须大于零且不超过十年。"
+      }
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:24.886097+00:00",
+    "check": "retry_refreshes_current_armed_state",
+    "result": {
+      "armed": true
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:25.103508+00:00",
+    "check": "cancel_preserves_history",
+    "result": {
+      "ids": [
+        "920C559C-5001-4DDD-B343-0C94A94AB38D",
+        "1BE9A27D-BFD7-4B07-A1DD-EF4AE0ABF93A"
+      ]
+    }
+  },
+  {
+    "at": "2026-10-23T04:41:25.150171+00:00",
+    "check": "stdio_client_closed",
+    "result": true
+  }
+]

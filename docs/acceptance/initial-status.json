@@ -1,0 +1,15 @@
+{
+  "appId" : "com.meno.reminders",
+  "blockedReason" : "后台提醒已暂停",
+  "connectedScreenCount" : 2,
+  "defaultReminderType" : "system",
+  "enabled" : false,
+  "name" : "到点提醒",
+  "notificationPermission" : "尚未请求",
+  "overlayContentScreenID" : null,
+  "overlayScreenCount" : 0,
+  "pendingSystemCount" : 0,
+  "running" : false,
+  "runtimeFailure" : null,
+  "systemBlockedReason" : "系统通知尚未请求"
+}

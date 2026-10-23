@@ -1,0 +1,21 @@
+Building for production...
+[Computing dependencies]
+[1 / 1]
+[2 / 4] RemindersPlugin
+[3 / 5] RemindersPlugin
+[9 / 12] MenoHost-product
+[10 / 13] MenoHost-product
+[12 / 13] MenoHost-product
+[13 / 13] MenoHost-product
+Build complete! (8.58秒)
+/Users/chenyuhang/work/personal/code/Meno/dist/.build-app.UzUTKa/Meno.app/Contents/Helpers/meno: replacing existing signature
+/Users/chenyuhang/work/personal/code/Meno/dist/.build-app.UzUTKa/Meno.app/Contents/Helpers/meno-mcp: replacing existing signature
+/Users/chenyuhang/work/personal/code/Meno/dist/.build-app.UzUTKa/Meno.app: replacing existing signature
+--prepared:/Users/chenyuhang/work/personal/code/Meno/dist/.build-app.UzUTKa/Meno.app/Contents/Helpers/meno
+--validated:/Users/chenyuhang/work/personal/code/Meno/dist/.build-app.UzUTKa/Meno.app/Contents/Helpers/meno
+--prepared:/Users/chenyuhang/work/personal/code/Meno/dist/.build-app.UzUTKa/Meno.app/Contents/Helpers/meno-mcp
+--validated:/Users/chenyuhang/work/personal/code/Meno/dist/.build-app.UzUTKa/Meno.app/Contents/Helpers/meno-mcp
+/Users/chenyuhang/work/personal/code/Meno/dist/.build-app.UzUTKa/Meno.app: valid on disk
+/Users/chenyuhang/work/personal/code/Meno/dist/.build-app.UzUTKa/Meno.app: satisfies its Designated Requirement
+swift-driver version: 1.168.6 已生成：/Users/chenyuhang/work/personal/code/Meno/dist/Meno.app
+双击打开或运行：open '/Users/chenyuhang/work/personal/code/Meno/dist/Meno.app'

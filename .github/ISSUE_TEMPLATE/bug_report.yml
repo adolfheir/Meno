@@ -1,0 +1,22 @@
+name: Bug report
+description: 报告 Meno 功能或运行问题
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题与复现步骤
+      description: 说明预期行为、实际结果及可复现步骤，使用虚构提醒内容。
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境与版本
+      description: macOS 版本、Apple Silicon / Intel、Meno 版本或提交、通知授权、是否多屏。
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 日志或截图
+      description: 可附脱敏后的 diagnostics 输出；不要上传数据库、私人提醒或签名证书。

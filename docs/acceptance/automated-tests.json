@@ -1,0 +1,19 @@
+{
+  "recordedAt": "2026-10-23T12:43:29.145193+08:00",
+  "packages": {
+    "MenoControlProtocol": {
+      "tests": 5,
+      "failures": 0
+    },
+    "MenoPluginKit": {
+      "tests": 6,
+      "failures": 0
+    },
+    "Reminders": {
+      "tests": 29,
+      "failures": 0
+    }
+  },
+  "total": 40,
+  "buildPassed": true
+}

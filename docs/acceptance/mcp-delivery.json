@@ -1,0 +1,139 @@
+[
+  {
+    "at": "2026-10-23T04:21:47.579016+00:00",
+    "check": "initialize",
+    "result": {
+      "protocol": "2025-11-25",
+      "server": {
+        "name": "Meno",
+        "title": null,
+        "version": "0.1.0",
+        "websiteUrl": null,
+        "icons": null
+      }
+    }
+  },
+  {
+    "at": "2026-10-23T04:21:47.601370+00:00",
+    "check": "discover_six_tools_and_validate_schemas",
+    "result": [
+      "apps_get_status",
+      "apps_set_enabled",
+      "reminders_cancel",
+      "reminders_create",
+      "reminders_list",
+      "reminders_update"
+    ]
+  },
+  {
+    "at": "2026-10-23T04:21:48.601064+00:00",
+    "check": "create_retry_conflict_system",
+    "result": {
+      "id": "7A5764BC-21EF-4A8D-887E-2CF2C02341A0",
+      "saved": true,
+      "armed": false
+    }
+  },
+  {
+    "at": "2026-10-23T04:21:48.821110+00:00",
+    "check": "create_retry_conflict_fullscreen",
+    "result": {
+      "id": "88B64DB6-FD4C-4E2D-844B-E14123237409",
+      "saved": true,
+      "armed": false
+    }
+  },
+  {
+    "at": "2026-10-23T04:21:49.112769+00:00",
+    "check": "update_and_paginated_query",
+    "result": {
+      "total": 7,
+      "nextOffset": 1
+    }
+  },
+  {
+    "at": "2026-10-23T04:21:49.120178+00:00",
+    "check": "business_error_isError",
+    "result": {
+      "error": {
+        "code": "invalid_schedule",
+        "message": "afterSeconds 必须大于零且不超过十年。"
+      }
+    }
+  },
+  {
+    "at": "2026-10-23T04:21:50.991777+00:00",
+    "check": "retry_refreshes_current_armed_state",
+    "result": {
+      "armed": true
+    }
+  },
+  {
+    "at": "2026-10-23T04:21:52.629122+00:00",
+    "check": "cancel_preserves_history",
+    "result": {
+      "ids": [
+        "7A5764BC-21EF-4A8D-887E-2CF2C02341A0",
+        "88B64DB6-FD4C-4E2D-844B-E14123237409"
+      ]
+    }
+  },
+  {
+    "at": "2026-10-23T04:21:53.796577+00:00",
+    "check": "client_disconnecting_before_delivery",
+    "result": {
+      "armed": true,
+      "blockedReason": null,
+      "current": {
+        "armed": true,
+        "blockedReason": null,
+        "createdAt": "2026-10-23T04:21:52.642Z",
+        "id": "7A69F13A-DD9F-4DE4-ADFF-3FBDE860B2CB",
+        "isCancelled": false,
+        "isEnabled": true,
+        "nextTriggerAt": "2026-10-23T04:22:00.642Z",
+        "note": "此提醒由真实 MCP 客户端创建；客户端将在触发前断开。",
+        "reminderType": "fullscreen",
+        "revision": 1,
+        "saved": true,
+        "schedule": {
+          "date": "2026-10-23T04:22:00.642Z",
+          "hour": 12,
+          "minute": 22,
+          "rule": "once"
+        },
+        "source": "mcp",
+        "title": "[验收] MCP 退出后仍独立提醒",
+        "updatedAt": "2026-10-23T04:21:52.642Z"
+      },
+      "id": "7A69F13A-DD9F-4DE4-ADFF-3FBDE860B2CB",
+      "nextTriggerAt": "2026-10-23T04:22:00.642Z",
+      "reminder": {
+        "createdAt": "2026-10-23T04:21:52.642Z",
+        "id": "7A69F13A-DD9F-4DE4-ADFF-3FBDE860B2CB",
+        "isCancelled": false,
+        "isEnabled": true,
+        "note": "此提醒由真实 MCP 客户端创建；客户端将在触发前断开。",
+        "reminderType": "fullscreen",
+        "revision": 1,
+        "schedule": {
+          "date": "2026-10-23T04:22:00.642Z",
+          "hour": 12,
+          "minute": 22,
+          "rule": "once"
+        },
+        "source": "mcp",
+        "title": "[验收] MCP 退出后仍独立提醒",
+        "updatedAt": "2026-10-23T04:21:52.642Z"
+      },
+      "reminderType": "fullscreen",
+      "replayed": false,
+      "saved": true
+    }
+  },
+  {
+    "at": "2026-10-23T04:21:53.800223+00:00",
+    "check": "stdio_client_closed",
+    "result": true
+  }
+]

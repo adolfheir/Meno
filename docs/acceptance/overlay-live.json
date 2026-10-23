@@ -1,0 +1,61 @@
+{
+  "appId" : "com.meno.reminders",
+  "appIsActive" : true,
+  "blockedReason" : null,
+  "connectedScreenCount" : 2,
+  "defaultReminderType" : "system",
+  "enabled" : true,
+  "keyWindowTitle" : "到点提醒 · Meno",
+  "name" : "到点提醒",
+  "notificationPermission" : "未授权",
+  "overlayContentScreenID" : 1,
+  "overlayScreenCount" : 2,
+  "pendingSystemCount" : 0,
+  "running" : true,
+  "runtimeFailure" : null,
+  "screens" : [
+    {
+      "frame" : "{{0, 0}, {1470, 956}}",
+      "id" : 1
+    },
+    {
+      "frame" : "{{304, 956}, {2560, 1440}}",
+      "id" : 3
+    }
+  ],
+  "socketPath" : "/Users/chenyuhang/Library/Application Support/Meno/control.sock",
+  "systemBlockedReason" : "系统通知未授权",
+  "version" : "0.1.0",
+  "windows" : [
+    {
+      "frame" : "{{601, 923}, {38, 33}}",
+      "number" : 4294967296,
+      "title" : "Item-0"
+    },
+    {
+      "frame" : "{{1993, 2366}, {38, 30}}",
+      "number" : 8589934592,
+      "title" : ""
+    },
+    {
+      "frame" : "{{273, 78}, {850, 818}}",
+      "number" : 101454,
+      "title" : "到点提醒 · Meno"
+    },
+    {
+      "frame" : "{{0, 0}, {1470, 956}}",
+      "number" : 101479,
+      "title" : "Meno 全屏提醒"
+    },
+    {
+      "frame" : "{{304, 956}, {2560, 1440}}",
+      "number" : 101480,
+      "title" : "Meno 提醒蒙层"
+    },
+    {
+      "frame" : "{{283, 872}, {66, 20}}",
+      "number" : 101481,
+      "title" : "Window"
+    }
+  ]
+}

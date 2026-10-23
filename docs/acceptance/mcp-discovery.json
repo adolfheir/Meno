@@ -1,0 +1,28 @@
+[
+  {
+    "at": "2026-10-23T04:06:45.623885+00:00",
+    "check": "initialize",
+    "result": {
+      "protocol": "2025-11-25",
+      "server": {
+        "name": "Meno",
+        "title": null,
+        "version": "0.1.0",
+        "websiteUrl": null,
+        "icons": null
+      }
+    }
+  },
+  {
+    "at": "2026-10-23T04:06:45.647915+00:00",
+    "check": "discover_six_tools_and_validate_schemas",
+    "result": [
+      "apps_get_status",
+      "apps_set_enabled",
+      "reminders_cancel",
+      "reminders_create",
+      "reminders_list",
+      "reminders_update"
+    ]
+  }
+]

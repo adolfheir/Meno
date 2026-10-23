@@ -1,0 +1,49 @@
+{
+  "armed" : true,
+  "blockedReason" : null,
+  "current" : {
+    "armed" : true,
+    "blockedReason" : null,
+    "createdAt" : "2026-10-23T04:21:56.002Z",
+    "id" : "B32A244D-9902-45D9-B7BF-5A29BE89EAF9",
+    "isCancelled" : false,
+    "isEnabled" : true,
+    "nextTriggerAt" : "2026-10-23T04:22:00.642Z",
+    "note" : "",
+    "reminderType" : "fullscreen",
+    "revision" : 1,
+    "saved" : true,
+    "schedule" : {
+      "date" : "2026-10-23T04:22:00.642Z",
+      "hour" : 12,
+      "minute" : 22,
+      "rule" : "once"
+    },
+    "source" : "cli",
+    "title" : "[验收] 同时到点的第二条全屏事项",
+    "updatedAt" : "2026-10-23T04:21:56.002Z"
+  },
+  "id" : "B32A244D-9902-45D9-B7BF-5A29BE89EAF9",
+  "nextTriggerAt" : "2026-10-23T04:22:00.642Z",
+  "reminder" : {
+    "createdAt" : "2026-10-23T04:21:56.002Z",
+    "id" : "B32A244D-9902-45D9-B7BF-5A29BE89EAF9",
+    "isCancelled" : false,
+    "isEnabled" : true,
+    "note" : "",
+    "reminderType" : "fullscreen",
+    "revision" : 1,
+    "schedule" : {
+      "date" : "2026-10-23T04:22:00.642Z",
+      "hour" : 12,
+      "minute" : 22,
+      "rule" : "once"
+    },
+    "source" : "cli",
+    "title" : "[验收] 同时到点的第二条全屏事项",
+    "updatedAt" : "2026-10-23T04:21:56.002Z"
+  },
+  "reminderType" : "fullscreen",
+  "replayed" : false,
+  "saved" : true
+}

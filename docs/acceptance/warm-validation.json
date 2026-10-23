@@ -1,0 +1,81 @@
+{
+  "verifiedAt": "2026-10-23T06:02:33.276856+00:00",
+  "sourceSHA256": "a63b5b3fa2b974e984ed55cbb1fc1904b9306a2a7f6d26a34dab4c16d0a68c79",
+  "appPath": "/Users/chenyuhang/Applications/Meno.app",
+  "signatureVerified": true,
+  "installedMatchesPackage": true,
+  "binaries": {
+    "MacOS/Meno": "64cdd4c56ca8e59738cfcafb9f36d30aa74865d56a3b5df7e63496f47fa06819",
+    "Helpers/meno": "0c31817ab40dad631f30601482eb62e9cbdd436f5a9e856b7ab5beeb5240b618",
+    "Helpers/meno-mcp": "6999885928e2ff867b8d63e133f437c96a19e99efd5bc21e6c7de691acd2436e"
+  },
+  "appearance": "light",
+  "reminderTests": {
+    "command": "swift test --package-path plugins/Reminders",
+    "passed": 29,
+    "failed": 0
+  },
+  "visualChecks": [
+    "暖白主窗口及标题栏",
+    "奶油色卡片、棕灰文字、陶土色强调",
+    "快捷时间与展开控件可操作",
+    "设置外观显示暖白，重启后保留"
+  ],
+  "screenshots": [
+    "window-warm.png",
+    "settings-warm.png"
+  ],
+  "runtimeSnapshot": {
+    "appId": "com.meno.reminders",
+    "appIsActive": false,
+    "blockedReason": null,
+    "connectedScreenCount": 2,
+    "defaultReminderType": "system",
+    "enabled": true,
+    "keyWindowTitle": null,
+    "name": "到点提醒",
+    "notificationPermission": "未授权",
+    "overlayContentScreenID": null,
+    "overlayScreenCount": 0,
+    "pendingSystemCount": 0,
+    "presentationSuspended": false,
+    "running": true,
+    "runtimeFailure": null,
+    "screens": [
+      {
+        "frame": "{{0, 0}, {1470, 956}}",
+        "id": 1
+      },
+      {
+        "frame": "{{304, 956}, {2560, 1440}}",
+        "id": 3
+      }
+    ],
+    "socketPath": "/Users/chenyuhang/Library/Application Support/Meno/control.sock",
+    "systemBlockedReason": "系统通知未授权",
+    "version": "0.1.0",
+    "windows": [
+      {
+        "frame": "{{1955, 2366}, {38, 30}}",
+        "number": 4294967296,
+        "title": "Item-0"
+      },
+      {
+        "frame": "{{563, 923}, {38, 33}}",
+        "number": 8589934592,
+        "title": ""
+      },
+      {
+        "frame": "{{1198, 1085}, {850, 818}}",
+        "number": 102998,
+        "title": "到点提醒 · Meno"
+      }
+    ]
+  },
+  "notes": [
+    "用户已开始在窗口中试用，运行状态及焦点为抓取时快照"
+  ],
+  "unverified": [
+    "本次没有重新验证真实系统通知、全屏、Spaces 和登录启动；沿用首轮验收边界"
+  ]
+}

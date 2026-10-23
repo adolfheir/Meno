@@ -1,0 +1,85 @@
+{
+  "verifiedAt": "2026-10-23T06:53:45.101405+00:00",
+  "sourceSHA256": "26baa2c4fb4f33ae555b5f8d4f308c95f6887e8e2b75e9f217b0469e7653aaec",
+  "builtAt": "2026-10-23T06:50:51.270202+00:00",
+  "appPath": "/Users/chenyuhang/Applications/Meno.app",
+  "signed": true,
+  "installedMatchesPackage": true,
+  "binarySHA256": {
+    "MacOS/Meno": "a845f8420e330fac6b565baf5cdf34591c02d12027d8d6b18d385317f9b66104",
+    "Helpers/meno": "811b076a3f5164a51b5e55596e5e6e82c7133dd9cdd3ec4ea62598e1db274d36",
+    "Helpers/meno-mcp": "a1cb53936d1be9101d1e5a78834e1d6044de39134267afe5666a9f7695d016df"
+  },
+  "tests": {
+    "command": "swift test --package-path plugins/Reminders",
+    "passed": 29,
+    "failed": 0
+  },
+  "visualChecks": [
+    "实际安装并打开最终窗口",
+    "独立浅灰蓝渐变背景阻止桌面内容穿透",
+    "主要控件使用原生液态玻璃，按钮移除黄色",
+    "提醒类型菜单直接列出两个选项",
+    "5/10 分钟选择和筛选切换结果态正常",
+    "最终恢复待提醒、10 分钟、空内容，未创建测试事项"
+  ],
+  "screenshot": "window-liquid-glass.png",
+  "runtime": {
+    "appId": "com.meno.reminders",
+    "appIsActive": false,
+    "appearance": "NSAppearanceNameAqua",
+    "blockedReason": null,
+    "connectedScreenCount": 2,
+    "defaultReminderType": "system",
+    "enabled": true,
+    "keyWindowTitle": null,
+    "liquidGlassAvailable": true,
+    "name": "到点提醒",
+    "notificationPermission": "未授权",
+    "overlayContentScreenID": null,
+    "overlayScreenCount": 0,
+    "pendingSystemCount": 0,
+    "presentationSuspended": false,
+    "reduceMotion": false,
+    "reduceTransparency": false,
+    "running": true,
+    "runtimeFailure": null,
+    "screens": [
+      {
+        "frame": "{{0, 0}, {1470, 956}}",
+        "id": 1
+      },
+      {
+        "frame": "{{304, 956}, {2560, 1440}}",
+        "id": 3
+      }
+    ],
+    "socketPath": "/Users/chenyuhang/Library/Application Support/Meno/control.sock",
+    "systemBlockedReason": "系统通知未授权",
+    "version": "0.1.0",
+    "windows": [
+      {
+        "frame": "{{1955, 2366}, {38, 30}}",
+        "number": 4294967296,
+        "title": "Item-0"
+      },
+      {
+        "frame": "{{563, 923}, {38, 33}}",
+        "number": 8589934592,
+        "title": ""
+      },
+      {
+        "frame": "{{1037, 1105}, {850, 818}}",
+        "number": 106722,
+        "title": "到点提醒 · Meno"
+      }
+    ]
+  },
+  "reminderCount": 0,
+  "remaining": [
+    "连续动效没有逐帧录制，减少动态效果与降低透明度未切换系统设置实测",
+    "深色模式和旧版 macOS 回退尚未做本轮视觉回归",
+    "真实系统通知未授权，沿用首轮验收中的限制",
+    "全屏、Spaces、台前调度、休眠及登录启动未在本轮重测"
+  ]
+}
