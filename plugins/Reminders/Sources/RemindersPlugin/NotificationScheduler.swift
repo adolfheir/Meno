@@ -91,7 +91,7 @@ final class NotificationScheduler: ObservableObject {
                     content.body = item.note.isEmpty ? "到提醒时间了。" : item.note
                     content.sound = .default; content.categoryIdentifier = "MENO_REMINDER"
                     content.userInfo = ["meno.pluginID": RemindersPlugin.descriptor.id, "meno.occurrenceID": item.id]
-                    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, item.scheduledAt.timeIntervalSince(now)), repeats: false)
+                    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, item.scheduledAt.timeIntervalSince(self.now())), repeats: false)
                     try await client.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
                 }
                 armedIDs.insert(item.id)

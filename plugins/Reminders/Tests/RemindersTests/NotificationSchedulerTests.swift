@@ -26,6 +26,17 @@ final class NotificationSchedulerTests: XCTestCase {
         let r = Reminder(title: "Test", schedule: ReminderSchedule(rule: .once, date: at), reminderType: type)
         return Occurrence(reminder: r, at: at)
     }
+    @MainActor func testSubmissionUsesCurrentTimeAfterDurablePreparation() async throws {
+        var clock = Date()
+        let client = FakeNotificationClient()
+        let scheduler = NotificationScheduler(client: client, now: { clock })
+        let occurrence = item(at: clock.addingTimeInterval(100))
+        scheduler.beforeSubmit = { _ in clock = clock.addingTimeInterval(30) }
+        await scheduler.sync([occurrence], active: true)
+        let request = try XCTUnwrap(client.requests[NotificationScheduler.prefix + occurrence.id])
+        let trigger = try XCTUnwrap(request.trigger as? UNTimeIntervalNotificationTrigger)
+        XCTAssertEqual(trigger.timeInterval, 70, accuracy: 0.001)
+    }
     @MainActor func testOnlySelectedTypeIsSubmittedAndStopDoesNotTouchOtherModules() async {
         let client = FakeNotificationClient(); client.requests["other"] = UNNotificationRequest(identifier: "other", content: UNMutableNotificationContent(), trigger: nil)
         let scheduler = NotificationScheduler(client: client)

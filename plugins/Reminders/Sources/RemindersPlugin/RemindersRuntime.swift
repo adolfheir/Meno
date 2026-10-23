@@ -95,7 +95,7 @@ final class RemindersRuntime: PluginRuntime {
         } else { presenter.close() }
         let future = try model.service.history().filter { [.planned, .submitted, .failed].contains($0.state) && $0.scheduledAt > now }
         if let next = future.map(\.scheduledAt).min(), !suspended {
-            let timer = Timer(timeInterval: max(0.05, next.timeIntervalSince(now) + 0.1), repeats: false) { [weak self] _ in
+            let timer = Timer(timeInterval: max(0.05, next.timeIntervalSince(model.service.now()) + 0.1), repeats: false) { [weak self] _ in
                 Task { @MainActor [weak self] in guard self?.active == true else { return }; await self?.reconcile() }
             }
             self.timer = timer; RunLoop.main.add(timer, forMode: .common)
