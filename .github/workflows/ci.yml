@@ -2,6 +2,7 @@ name: Meno CI
 
 on:
   push:
+    branches: [main, master, "codex/**"]
   pull_request:
   workflow_dispatch:
 
