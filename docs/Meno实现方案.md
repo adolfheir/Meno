@@ -183,7 +183,7 @@ Meno 收到的是明确字段，不需要理解原句；它校验类型和时间
 
 创建参数中，`title`、`schedule` 和 `requestId` 必填；`reminderType` 可取 `system` 或 `fullscreen`，省略时采用应用设置中的默认类型，并在回执中明确返回。`note` 可选，`enablePlugin` 默认为 `false`，传入 `true` 才显式开启原本停用的后台运行。
 
-时间采用有明确分支的结构：单次绝对时间使用 `kind: once` 和带时区的 ISO 8601 `at`；相对时间使用 `kind: delay` 和正数 `afterSeconds`；每天与周一至周五分别使用 `kind: daily`、`kind: weekdays`，指定 `time` 和本地时区策略。参数冲突、无效类型、缺失内容和过去的单次时间返回明确错误，不由 App 猜测或修正。
+时间采用有明确分支的结构：单次绝对时间使用 `kind: once` 和带时区的 ISO 8601 `at`；相对时间使用 `kind: delay` 和正数 `afterSeconds`；日历重复使用 `daily`、`weekdays`、`weekly`、`monthly`、`yearly`，支持单个或多个钟点、任意星期、月末或第几个星期几、间隔周期、固定时区、起止和排除日期；固定时长使用 `interval`。完整字段见 [MCP 与 CLI 接入](MCP与CLI.md)。参数冲突、无效类型、缺失内容和过去的单次时间返回明确错误，不由 App 猜测或修正。
 
 每次成功写入返回提醒 ID、`saved`、`armed`、`reminderType`、`nextTriggerAt` 和运行受阻原因。`armed` 表示后台已启用且当前类型具备所需条件，不承诺系统通知一定显示在屏幕上。保存成功但后台停用或系统通知未授权时，返回 `saved: true, armed: false`，同时解释具体原因。
 
@@ -218,7 +218,7 @@ meno reminders update <id> --in 30m --json
 meno reminders cancel <id> --json
 ```
 
-以上为拟定接口，具体参数和工具安装方式会随实现文档一起固定。CLI 的 `--in`、`--daily`、`--weekdays` 和 `--at` 互斥，类型使用 `--type system|fullscreen`。外部调用不直接修改数据库、写入数据文件或模拟点击界面。
+CLI 的单次、延迟及各种重复规则互斥，可通过 `--weekly`、`--monthly`、`--yearly`、`--interval` 或完整 `--schedule` 配置；类型使用 `--type system|fullscreen`。外部调用不直接修改数据库、写入数据文件或模拟点击界面。
 
 ### 运行状态的约定
 

@@ -35,7 +35,7 @@ public final class ReminderService: ObservableObject {
         let allowed: Set<String>
         switch command {
         case "reminders_create": allowed = ["title", "note", "schedule", "reminderType", "requestId", "enablePlugin"]
-        case "reminders_update": allowed = ["id", "title", "note", "schedule", "reminderType", "isEnabled", "requestId"]
+        case "reminders_update": allowed = ["id", "title", "note", "schedule", "reminderType", "isEnabled", "pauseUntil", "requestId"]
         case "reminders_cancel": allowed = ["id", "requestId"]
         case "apps_set_enabled": allowed = ["appId", "enabled", "requestId"]
         default: throw ControlError("unknown_command", "未知写操作。")
@@ -93,9 +93,15 @@ public final class ReminderService: ObservableObject {
                     if let value = args["note"]?.string { reminder.note = value }
                     if let value = args["reminderType"]?.string { reminder.reminderType = ReminderType(rawValue: value)! }
                     if args["schedule"] != nil { reminder.schedule = try parseSchedule(args["schedule"], at: current) }
+                    if let value = args["pauseUntil"] {
+                        guard let text = value.string, text.isEmpty || TimeText.parse(text) != nil else { throw ControlError("invalid_date", "pauseUntil 必须是带时区的时间或空字符串。") }
+                        if !text.isEmpty && reminder.schedule.rule == .once { throw ControlError("invalid_schedule", "单次提醒不能按时长暂停。") }
+                        reminder.pauseUntil = text.isEmpty ? nil : TimeText.parse(text)
+                    }
                     if let value = args["isEnabled"]?.bool {
                         if value && reminder.schedule.rule == .once && reminder.schedule.date <= current { throw ControlError("past_date", "单次时间已过，请同时提供未来时间。") }
                         reminder.isEnabled = value
+                        reminder.pauseUntil = nil
                     }
                 }
                 reminder.revision += 1; reminder.updatedAt = current
@@ -114,28 +120,7 @@ public final class ReminderService: ObservableObject {
     }
 
     public func parseSchedule(_ value: JSONValue?, at current: Date) throws -> ReminderSchedule {
-        guard let object = value?.object else { throw ControlError("invalid_schedule", "schedule 必须是结构化对象。") }
-        let kind = try Self.requiredString(object, "kind", max: 20)
-        switch kind {
-        case "once":
-            try Self.checkKeys(object, allowed: ["kind", "at"])
-            let at = try Self.requiredString(object, "at", max: 80)
-            guard at.range(of: "(Z|[+-][0-9]{2}:[0-9]{2})$", options: .regularExpression) != nil, let date = TimeText.parse(at) else { throw ControlError("invalid_schedule", "at 必须是带时区的 ISO 8601 时间。") }
-            guard date > current else { throw ControlError("past_date", "单次提醒必须指定未来时间。") }
-            return ReminderSchedule(rule: .once, date: date)
-        case "delay":
-            try Self.checkKeys(object, allowed: ["kind", "afterSeconds"])
-            guard let seconds = object["afterSeconds"]?.number, seconds.isFinite, seconds > 0, seconds <= 315_360_000 else { throw ControlError("invalid_schedule", "afterSeconds 必须大于零且不超过十年。") }
-            return ReminderSchedule(rule: .once, date: current.addingTimeInterval(seconds))
-        case "daily", "weekdays":
-            try Self.checkKeys(object, allowed: ["kind", "time"])
-            let text = try Self.requiredString(object, "time", max: 5)
-            guard text.range(of: "^([01][0-9]|2[0-3]):[0-5][0-9]$", options: .regularExpression) != nil else { throw ControlError("invalid_schedule", "重复时间必须为 24 小时制 HH:mm。") }
-            var schedule = ReminderSchedule(rule: kind == "daily" ? .daily : .weekdays, date: current)
-            let parts = text.split(separator: ":"); schedule.hour = Int(parts[0])!; schedule.minute = Int(parts[1])!
-            return schedule
-        default: throw ControlError("invalid_schedule", "时间类型仅支持 once、delay、daily、weekdays。")
-        }
+        try ScheduleParser.parse(value, at: current, calendar: calendar())
     }
     public static func checkKeys(_ args: [String: JSONValue], allowed: Set<String>) throws {
         if let key = args.keys.sorted().first(where: { !allowed.contains($0) }) { throw ControlError("unknown_argument", "不支持的参数：\(key)") }
@@ -160,14 +145,20 @@ public final class ReminderService: ObservableObject {
                 var dates: [Date] = []
                 if reminder.schedule.rule == .once { dates = [reminder.schedule.date] }
                 else {
-                    if let next = reminder.schedule.nextFireDate(after: current, calendar: calendar()) { dates.append(next) }
+                    if let next = reminder.schedule.nextFireDate(after: max(current, reminder.pauseUntil.map { $0.addingTimeInterval(-0.001) } ?? current), calendar: calendar()) { dates.append(next) }
                     for var old in try store.occurrences() where old.reminderID == reminder.id && old.reminderRevision == reminder.revision && !old.isSnooze && old.scheduledAt > current && [.planned, .submitted, .failed].contains(old.state) && !dates.contains(old.scheduledAt) {
                         old.state = .cancelled; old.updatedAt = current; old.detail = "时区或系统时间变化重算"; try store.save(old)
                     }
                     if catchUp {
                         let checkpoint = (try store.metadata("runtime_checkpoint")).flatMap(TimeText.parse) ?? current.addingTimeInterval(-1800)
-                        let after = max(current.addingTimeInterval(-1800), checkpoint, reminder.createdAt.addingTimeInterval(-0.001))
-                        if let missed = reminder.schedule.nextFireDate(after: after, calendar: calendar()), missed <= current { dates.append(missed) }
+                        let after = max(current.addingTimeInterval(-1800), checkpoint, reminder.createdAt.addingTimeInterval(-0.001), reminder.pauseUntil.map { $0.addingTimeInterval(-0.001) } ?? .distantPast)
+                        var cursor = after
+                        // At most 30 interval ticks or 24 calendar times fit in
+                        // the recovery window; include each once, never old days.
+                        for _ in 0..<64 {
+                            guard let missed = reminder.schedule.nextFireDate(after: cursor, calendar: calendar()), missed <= current else { break }
+                            dates.append(missed); cursor = missed
+                        }
                     }
                 }
                 for date in dates {

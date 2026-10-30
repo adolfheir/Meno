@@ -15,6 +15,58 @@ public enum MenoMotion {
     }
 }
 
+/// Short, event-driven feedback; no repeating animation or background work.
+public struct MenoQuietButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
+    public init() {}
+
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .menoHoverHighlight(cornerRadius: 100)
+            .scaleEffect(configuration.isPressed && isEnabled && !reduceMotion ? 0.97 : 1)
+            .animation(MenoMotion.feedback(reduceMotion: reduceMotion), value: configuration.isPressed)
+    }
+}
+
+private struct MenoHoverHighlight: ViewModifier {
+    let cornerRadius: CGFloat
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hovering = false
+
+    func body(content: Content) -> some View {
+        content.overlay {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .strokeBorder(MenoPalette.ink.opacity(hovering && isEnabled ? 0.18 : 0), lineWidth: 1)
+                .allowsHitTesting(false)
+        }
+        .onHover { hovering = $0 }
+        .onDisappear { hovering = false }
+        .animation(MenoMotion.feedback(reduceMotion: reduceMotion), value: hovering)
+    }
+}
+
+public extension View {
+    func menoHoverHighlight(cornerRadius: CGFloat) -> some View {
+        modifier(MenoHoverHighlight(cornerRadius: cornerRadius))
+    }
+}
+
+struct MenoFeedbackSymbol: View {
+    let name: String
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            Image(systemName: name).id(name)
+                .transition(reduceMotion ? .identity : .opacity.combined(with: .scale(scale: 0.75)))
+        }.frame(width: 18, height: 20)
+            .animation(MenoMotion.feedback(reduceMotion: reduceMotion), value: name)
+            .accessibilityHidden(true)
+    }
+}
+
 /// Meno's own horizon motif. Only the foreground, visible empty state animates;
 /// no timer or animation is attached to the reminder runtime.
 struct MenoSunrise: View {

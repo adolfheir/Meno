@@ -33,6 +33,8 @@ GitHub Actions 在 Apple Silicon 与 Intel 上执行检查、测试、Release �
 
 ## 外部接入
 
+主界面右上角与设置页均可「复制 AI 连接提示词」，直接贴给支持本机终端或 MCP 的 AI。提示词包含当前安装位置、只读连接验证命令及 MCP 配置，复制本身不会创建事项或改变后台状态。
+
 标准 MCP 使用官方 [MCP Swift SDK](https://github.com/modelcontextprotocol/swift-sdk/tree/0.12.1)，版本精确锁定为 0.12.1，随 App 提供 stdio 辅助程序 `Contents/Helpers/meno-mcp`；CLI 为 `Contents/Helpers/meno`。两者通过仅限当前用户的 Unix socket 调用唯一宿主，客户端退出不影响已启用的提醒。
 
 ```sh
@@ -41,3 +43,7 @@ dist/Meno.app/Contents/Helpers/meno apps status reminders --json
 ```
 
 完整配置、参数、回执和重试规则见 [MCP 与 CLI 接入](docs/MCP与CLI.md)，模块边界、数据迁移和恢复策略见 [开发说明](docs/开发说明.md)，真实运行证据及未覆盖环境见 [首版验收](docs/验收结果.md)。交接和设计原文保留在 `docs/`。
+
+## 灵活的提醒时间
+
+自选时间支持单次、延迟、每天、工作日、自选星期、每月日期或第几个星期几、每年及固定时长间隔；可配置多个时点、间隔周期、固定时区、开始/结束和排除日期。周末可直接选择周六日，也可选择周五六日。界面、CLI 与 MCP 使用同一套规则；例如 `meno reminders add --title '周末提醒' --weekly 5,6,7 --times 10:55,17:55 --timezone Asia/Shanghai --request-id unique-id`。完整格式和月末、闰日、夏令时语义见 [MCP 与 CLI 接入](docs/MCP与CLI.md)。

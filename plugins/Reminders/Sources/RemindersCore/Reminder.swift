@@ -8,76 +8,13 @@ public enum ReminderType: String, Codable, CaseIterable, Identifiable, Sendable 
     public var symbol: String { self == .system ? "bell" : "rectangle.inset.filled" }
 }
 
-public enum RepeatRule: String, Codable, CaseIterable, Identifiable, Sendable {
-    case once, daily, weekdays
-    public var id: Self { self }
-    public var label: String {
-        switch self {
-        case .once: "仅一次"
-        case .daily: "每天"
-        case .weekdays: "周一至周五"
-        }
-    }
-}
-
-public struct ReminderSchedule: Codable, Equatable, Sendable {
-    public var rule: RepeatRule
-    public var date: Date
-    // Recurring wall-clock times must not change when the system time zone changes.
-    public var hour: Int
-    public var minute: Int
-
-    public init(rule: RepeatRule, date: Date, calendar: Calendar = .current) {
-        self.rule = rule
-        self.date = date
-        self.hour = calendar.component(.hour, from: date)
-        self.minute = calendar.component(.minute, from: date)
-    }
-
-    public var isValid: Bool { (0...23).contains(hour) && (0...59).contains(minute) }
-
-    public func nextFireDate(after now: Date, calendar: Calendar = .current) -> Date? {
-        guard isValid else { return nil }
-        if rule == .once { return date > now ? date : nil }
-        // Search one wall-clock occurrence per day. The first occurrence on a DST
-        // fold is used, even when now lies between the two equal clock readings.
-        for offset in 0...8 {
-            guard let day = calendar.date(byAdding: .day, value: offset, to: calendar.startOfDay(for: now)) else { continue }
-            let weekday = calendar.component(.weekday, from: day)
-            if rule == .weekdays && !(2...6).contains(weekday) { continue }
-            let match = DateComponents(hour: hour, minute: minute, second: 0)
-            if let candidate = calendar.nextDate(after: day.addingTimeInterval(-0.001), matching: match,
-                matchingPolicy: .nextTime, repeatedTimePolicy: .first), calendar.isDate(candidate, inSameDayAs: day), candidate > now { return candidate }
-        }
-        return nil
-    }
-
-    public func notificationDates(after now: Date, calendar: Calendar = .current) -> [DateComponents] {
-        guard nextFireDate(after: now, calendar: calendar) != nil else { return [] }
-        if rule == .once {
-            var components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
-            components.timeZone = calendar.timeZone
-            return [components]
-        }
-        var components = DateComponents()
-        components.hour = hour
-        components.minute = minute
-        components.second = 0
-        if rule == .daily { return [components] }
-        return (2...6).map { weekday in
-            var match = components
-            match.weekday = weekday
-            return match
-        }
-    }
-}
-
 public struct Reminder: Codable, Identifiable, Equatable, Sendable {
     public var id: UUID
     public var title: String
     public var note: String
     public var schedule: ReminderSchedule
     public var isEnabled: Bool
+    public var pauseUntil: Date?
     public var reminderType: ReminderType
     public var isCancelled: Bool
     public var source: String
@@ -97,7 +34,7 @@ public struct Reminder: Codable, Identifiable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, note, schedule, isEnabled, reminderType, isCancelled, source, createdAt, updatedAt, revision
+        case id, title, note, schedule, isEnabled, pauseUntil, reminderType, isCancelled, source, createdAt, updatedAt, revision
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -105,6 +42,7 @@ public struct Reminder: Codable, Identifiable, Equatable, Sendable {
         note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
         schedule = try c.decode(ReminderSchedule.self, forKey: .schedule)
         isEnabled = try c.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+        pauseUntil = try c.decodeIfPresent(Date.self, forKey: .pauseUntil)
         reminderType = try c.decodeIfPresent(ReminderType.self, forKey: .reminderType) ?? .system
         isCancelled = try c.decodeIfPresent(Bool.self, forKey: .isCancelled) ?? false
         source = try c.decodeIfPresent(String.self, forKey: .source) ?? "legacy"
@@ -114,7 +52,7 @@ public struct Reminder: Codable, Identifiable, Equatable, Sendable {
     }
 
     public func nextFireDate(after now: Date = .now) -> Date? {
-        isEnabled && !isCancelled ? schedule.nextFireDate(after: now) : nil
+        isEnabled && !isCancelled ? schedule.nextFireDate(after: max(now, pauseUntil.map { $0.addingTimeInterval(-0.001) } ?? now)) : nil
     }
 }
 
@@ -177,7 +115,7 @@ public enum ReminderError: LocalizedError {
         case .invalidData: "提醒数据格式有误，原文件已保留，请检查数据目录。"
         case .titleRequired: "请填写提醒内容。"
         case .pastDate: "请选择未来的提醒时间。"
-        case .tooManyRequests: "待触发的通知数量超过 60 个，请先关闭一些提醒；工作日提醒会占用 5 个通知。"
+        case .tooManyRequests: "待触发的通知队列已满（60 条），较近计划触发后会自动补入。"
         }
     }
 }

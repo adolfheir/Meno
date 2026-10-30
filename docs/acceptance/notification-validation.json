@@ -1,0 +1,104 @@
+{
+  "testedAt": "2026-10-23T16:39:03.874892+08:00",
+  "environment": {
+    "macOS": "26.6.2",
+    "architecture": "arm64",
+    "connectedScreens": 2
+  },
+  "build": {
+    "version": "0.1.0",
+    "builtAt": "2026-10-23T08:30:44.759531+00:00",
+    "gitRevision": "a70ba18c3f4f58d55146523712f58c673d7e003e",
+    "gitDirty": true,
+    "sourceSHA256": "1b6bfaa521728014da844ad4faac3b59c3065989b4176cc053e65b2eb34bba15",
+    "binaries": {
+      "Contents/MacOS/Meno": "d2790155b1320c2841d9b185b5842ea8916f61f48554e7448c06f2f696f324d1",
+      "Contents/Helpers/meno": "919005300d839e0844f7fe52fd2fe40c5d931b733097c0b933555d366a93a882",
+      "Contents/Helpers/meno-mcp": "689d141e2e9b309e99c0087626111c722d36fd5e64f5975cdcbf48b1e682d52d"
+    }
+  },
+  "automated": {
+    "passed": true,
+    "tests": 60,
+    "failures": 0,
+    "packages": {
+      "MenoControlProtocol": 5,
+      "MenoPluginKit": 6,
+      "MenoCLIKit": 10,
+      "Reminders": 39
+    },
+    "debugBuild": "passed"
+  },
+  "integration": {
+    "checks": [
+      "mcp-discovery",
+      "mcp-smoke",
+      "retry-smoke",
+      "runtime-smoke",
+      "sigterm-and-restart"
+    ],
+    "passed": true,
+    "isolatedBundle": true,
+    "hostStopped": true,
+    "sigtermRestartCycles": 3,
+    "initialFailure": "LaunchServices error -600 after SIGTERM; reproduced twice",
+    "fix": "Retry only procNotFound startup failures, up to 4 attempts with 0.25/0.5/0.75 second delays"
+  },
+  "liveChecks": {
+    "permissionOffUI": "未授权 / 前往系统设置 / recovery instructions",
+    "permissionOffSave": {
+      "saved": true,
+      "armed": false
+    },
+    "permissionOffRequestErrorCode": "notifications_disabled",
+    "permissionOnUI": "已授权; recovery instructions removed",
+    "permissionOnResubmission": "previously blocked reminder armed without editing",
+    "normalRestart": "permission, enabled state, and exact snooze deadline retained",
+    "cancel": "cancelled before original deadline; no delivery record",
+    "changeType": "system request cancelled before original deadline; no delivery record",
+    "changeTime": "revision 1 cancelled; only revision 2 delivered",
+    "pauseResume": "system pending queue emptied; paused item expired as missed without catch-up; future snooze restored",
+    "snooze": {
+      "action": "CLI occurrence_action",
+      "delaySeconds": 300.001,
+      "redelivery": "delivered",
+      "survivedUpgradeRestartAndPauseResume": true,
+      "deliveryRecordedDelaySeconds": 300.176,
+      "deliveryRecordedLatenessSeconds": 0.175
+    },
+    "fullscreen": "acknowledged record observed 2.522 seconds after due time; overlay had already closed before capture"
+  },
+  "presentationBoundary": {
+    "systemDelivery": "confirmed by app delivery record and usernoted logs",
+    "bannerAndSound": "suppressed by macOS displayShared policy; not visually or audibly accepted",
+    "nativeNotificationButtons": "not exercised; acknowledgement and snooze used the shared CLI action"
+  },
+  "cleanup": {
+    "testRemindersCancelled": 7,
+    "testNotificationsDismissed": true,
+    "finalState": {
+      "appId": "com.meno.reminders",
+      "blockedReason": null,
+      "connectedScreenCount": 2,
+      "defaultReminderType": "system",
+      "enabled": true,
+      "name": "到点提醒",
+      "notificationPermission": "已授权",
+      "overlayContentScreenID": null,
+      "overlayScreenCount": 0,
+      "pendingSystemCount": 0,
+      "presentationSuspended": false,
+      "running": true,
+      "runtimeFailure": null,
+      "systemBlockedReason": null
+    }
+  },
+  "notCovered": [
+    "physical sleep/wake",
+    "logout/login or whole-machine restart",
+    "multiple Spaces/full-screen-app interaction",
+    "macOS 14 and Intel hardware",
+    "remote CI for current uncommitted changes"
+  ],
+  "localEvidenceDirectory": "test-results/notification-acceptance-20261023-162332"
+}

@@ -176,13 +176,25 @@ public struct LocalControlClient: Sendable {
         else if bundled.pathExtension == "app" { app = bundled }
         else { app = URL(fileURLWithPath: "/Applications/Meno.app") }
         guard FileManager.default.fileExists(atPath: app.appendingPathComponent("Contents/MacOS/Meno").path) else { throw ControlError("host_not_installed", "找不到 Meno.app；请安装到 /Applications，或设置 MENO_APP_PATH。") }
-        let process = Process(); process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
         var arguments = ["-g"]
         if let directory = ProcessInfo.processInfo.environment["MENO_DATA_DIR"] { arguments += ["--env", "MENO_DATA_DIR=" + directory] }
         arguments += [app.path, "--args", "--background"]
-        process.arguments = arguments
-        process.standardOutput = FileHandle.standardError; process.standardError = FileHandle.standardError
-        try process.run(); process.waitUntilExit()
-        guard process.terminationStatus == 0 else { throw ControlError("host_start_failed", "无法后台启动 Meno.app。") }
+        for attempt in 0..<4 {
+            let process = Process(); process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+            process.arguments = arguments
+            let output = Pipe(); process.standardOutput = output; process.standardError = output
+            try process.run()
+            let diagnostic = output.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            if process.terminationStatus == 0 { return }
+            // LaunchServices can briefly retain the just-terminated process. Retry
+            // procNotFound; other launch failures keep their original diagnostics.
+            if attempt < 3, String(decoding: diagnostic, as: UTF8.self).contains("error -600") {
+                Thread.sleep(forTimeInterval: 0.25 * Double(attempt + 1))
+                continue
+            }
+            FileHandle.standardError.write(diagnostic)
+            throw ControlError("host_start_failed", "无法后台启动 Meno.app。")
+        }
     }
 }

@@ -18,7 +18,7 @@ public enum MenoPalette {
     public static let onPrimary = adaptive(light: 0xF3F3F5, dark: 0x343439)
     public static let disabledFill = adaptive(light: 0xE5E5E8, dark: 0x454549)
     public static let disabledInk = adaptive(light: 0x6B6B71, dark: 0xBCBCC2)
-    public static let positive = adaptive(light: 0x73737A, dark: 0xCECED4)
+    public static let positive = Color(nsColor: .systemGreen)
     public static let softAccent = adaptive(light: 0xD5D5DA, dark: 0x6A6A71)
     public static let border = adaptive(light: 0xD0D0D6, dark: 0x696970)
     // Keep the accepted fullscreen treatment; its button tint is not a window background.

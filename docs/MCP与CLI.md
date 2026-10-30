@@ -30,14 +30,36 @@ Meno 本身不理解自然语言、不调用模型。外部客户端将用户的
 
 `reminderType` 仅接受 `system` 或 `fullscreen`，省略时采用设置中的默认值。`enablePlugin` 默认 false，保存不会隐式打开被用户停用的后台。所有字段严格校验，不接受未知字段、null 代替省略、布尔值代替数值或互相冲突的时间字段。
 
-`schedule` 只允许下面四个分支中的一个，`at` 必须为未来且带时区，`afterSeconds` 为正数且不超过十年。每天和工作日时间是本机当地墙上时钟，工作日仅表示周一至周五。
+`schedule` 支持下列互斥规则。绝对时间必须包含时区；日历规则采用公历，星期按 ISO 编号（周一=1，周日=7）。保留原有单次、延迟、每天、周一至周五参数。
 
 ```json
 {"kind":"delay","afterSeconds":1200}
 {"kind":"once","at":"2027-01-02T09:00:00+08:00"}
 {"kind":"daily","time":"15:00"}
-{"kind":"weekdays","time":"09:30"}
+{"kind":"weekdays","times":["09:30","18:00"]}
+{"kind":"weekly","weekdays":[5,6,7],"times":["10:55","17:55"],"timeZone":"Asia/Shanghai"}
+{"kind":"monthly","monthDays":[1,15,-1],"time":"09:00"}
+{"kind":"monthly","ordinal":-1,"weekday":5,"time":"17:00"}
+{"kind":"yearly","month":2,"monthDays":[29],"time":"09:00"}
+{"kind":"yearly","month":11,"ordinal":4,"weekday":4,"time":"09:00"}
+{"kind":"interval","everySeconds":7200}
 ```
+
+日历规则必须且只能选择 `time` 或 `times`，后者为 1–24 个不重复的 `HH:mm`。`weekly.weekdays` 可任选 1–7，周末为 `[6,7]`。月/年规则选择 `monthDays`（1–31，`-1` 表示月末），或者同时提供 `ordinal`（1–5 或 `-1` 最后一个）与 `weekday`（1–7），两种方式互斥。`yearly` 额外需要 `month`（1–12）。
+
+| 可选字段 | 规则 |
+| --- | --- |
+| `every` | daily / weekly / monthly / yearly 的间隔周期，1–100，默认 1；如每 3 天、每 2 周、每 3 个月、每 2 年。按开始所在周期锚定，周一为周首。 |
+| `timeZone` | 固定时区，如 `Asia/Shanghai`；省略则跟随本机时区。间隔规则仍按真实经过的秒数，时区仅用于排除日期。 |
+| `startAt` | 带时区的开始时间（包含边界）；日历规则默认从保存时开始，固定间隔默认首次在一段间隔后。 |
+| `endAt` | 带时区的结束时间（包含边界）；省略为无限重复。 |
+| `excludedDates` | 最多 366 个不重复的 `YYYY-MM-DD`，按规则时区跳过这些日期。 |
+
+`interval.everySeconds` 为 60 秒到十年的固定间隔，可配合起止与排除日期；不接受钟点或 `every`。睡眠/重启按原始锚点恢复，不因恢复时刻改变间隔。
+
+月末采用实际最后一天；31 日会跳过没有 31 日的月份，2 月 29 日会跳过平年，第 5 个星期几不存在时跳过，均不会溢出到下个月。夏令时缺失的钟点顺延到当天首个有效时间，重复的钟点只用第一次；同一天多个钟点顺延后重合时只触发一次。没有未来有效时间的配置会拒绝保存。开始/结束与排除条件均参与实际调度。
+
+这套规则不推断法定节假日、调休、农历或自然语言，也不接受 cron/RRULE 表达式。界面、CLI、MCP 共用校验及下一次触发计算；新版本可直接读取旧提醒数据。后台仍每条事项滚动安排下一次触发，固定间隔和多时点在 30 分钟恢复窗口内逐次补入；主动暂停期间不会补弹。
 
 例如，显式启用后台并创建全屏提醒：
 
@@ -73,6 +95,11 @@ MENO='/实际位置/Meno.app/Contents/Helpers/meno'
 "$MENO" --help
 "$MENO" reminders add --title '喝水' --in 20m --type system --request-id water-001 --json
 "$MENO" reminders add --title '站起来活动' --daily 15:00 --type fullscreen --enable-plugin --json
+"$MENO" reminders add --title '周末提醒' --weekly 5,6,7 --times 10:55,17:55 --timezone Asia/Shanghai --request-id weekend-001
+"$MENO" reminders add --title '月末' --monthly -1 --time 09:00 --request-id month-end-001
+"$MENO" reminders add --title '闰日' --yearly 02-29 --time 09:00 --request-id leap-001
+"$MENO" reminders add --title '每两小时' --interval 2h --request-id interval-001
+"$MENO" reminders add --title '每月最后一个周五' --schedule '{"kind":"monthly","ordinal":-1,"weekday":5,"time":"17:00"}' --request-id last-friday-001
 "$MENO" reminders list --status active --limit 20 --json
 "$MENO" reminders history --json
 "$MENO" reminders update <id> --in 30m --type fullscreen --json
@@ -89,7 +116,7 @@ MENO='/实际位置/Meno.app/Contents/Helpers/meno'
 "$MENO" quit
 ```
 
-CLI 始终输出 JSON，业务错误写标准错误并使用非零退出码。未传 `--request-id` 时为新写入生成 UUID；脚本重试必须自己提供并复用 ID。`--in` 支持 s/m/h/d，和 `--at`、`--daily`、`--weekdays` 互斥。`--no-launch` 仅探测已运行宿主，不自动启动。`meno call <command> --arguments '<JSON对象>'` 供精确协议调试。
+CLI 始终输出 JSON，业务错误写标准错误并使用非零退出码。未传 `--request-id` 时为新写入生成 UUID；脚本重试必须自己提供并复用 ID。`--in`、`--interval` 支持 s/m/h/d；所有时间规则互斥。`--daily`、`--weekdays` 后可直接写逗号分隔的多个时点；自选星期、月、年使用 `--time` 或 `--times`。重复规则可追加 `--every`、`--timezone`、`--start-at`、`--end-at`、`--exclude`；`--schedule` 接受完整 JSON，不能再混用其他时间参数。`--no-launch` 仅探测已运行宿主，不自动启动。`meno call <command> --arguments '<JSON对象>'` 供精确协议调试。
 
 如果把 CLI 复制到 App 之外，设置 `MENO_APP_PATH=/实际位置/Meno.app`，或安装到 `/Applications/Meno.app`。开发／测试可以用 `MENO_DATA_DIR=/私有短路径` 隔离数据，宿主和客户端必须使用同一目录，socket 全路径需少于 104 字节；自动启动会传递此变量。不同数据目录不适合同时运行同 Bundle ID 的真实通知测试，系统通知命名空间仍属于同一个 App。
 

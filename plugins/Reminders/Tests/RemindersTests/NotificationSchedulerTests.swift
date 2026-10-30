@@ -1,4 +1,5 @@
 import RemindersCore
+import MenoControlProtocol
 @testable import RemindersPlugin
 import UserNotifications
 import XCTest
@@ -10,8 +11,15 @@ import XCTest
     var added: [String] = []
     var failure: Error?
     var onAdd: (() async -> Void)?
+    var authorizationRequests = 0
+    var authorizationResult: UNAuthorizationStatus = .authorized
+    var authorizationFailure: Error?
     func authorizationStatus() async -> UNAuthorizationStatus { status }
-    func requestAuthorization() async throws -> Bool { status = .authorized; return true }
+    func requestAuthorization() async throws -> Bool {
+        authorizationRequests += 1; status = authorizationResult
+        if let authorizationFailure { throw authorizationFailure }
+        return status == .authorized
+    }
     func pendingRequests() async -> [UNNotificationRequest] { Array(requests.values) }
     func deliveredIDs() async -> Set<String> { delivered }
     func add(_ request: UNNotificationRequest) async throws {
@@ -22,6 +30,49 @@ import XCTest
     func removeDelivered(_ identifiers: [String]) { delivered.subtract(identifiers) }
 }
 final class NotificationSchedulerTests: XCTestCase {
+    @MainActor func testPreviouslyDeniedPermissionGuidesToSettingsWithoutRequestingAgain() async {
+        let client = FakeNotificationClient(); client.status = .denied
+        let scheduler = NotificationScheduler(client: client)
+        do { try await scheduler.requestPermission(); XCTFail("Expected denied permission") }
+        catch {
+            XCTAssertEqual((error as? ControlError)?.code, "notifications_disabled")
+            XCTAssertTrue(error.localizedDescription.contains("系统设置 → 通知 → Meno"))
+        }
+        XCTAssertEqual(client.authorizationRequests, 0)
+        XCTAssertEqual(scheduler.authorization, .denied)
+    }
+    @MainActor func testAuthorizationFailureRefreshesStatusAndExplainsRecovery() async {
+        let client = FakeNotificationClient(); client.status = .notDetermined
+        client.authorizationResult = .denied
+        client.authorizationFailure = NSError(domain: UNErrorDomain, code: UNError.Code.notificationsNotAllowed.rawValue)
+        let scheduler = NotificationScheduler(client: client)
+        do { try await scheduler.requestPermission(); XCTFail("Expected denied permission") }
+        catch { XCTAssertEqual((error as? ControlError)?.code, "notifications_disabled") }
+        XCTAssertEqual(client.authorizationRequests, 1)
+        XCTAssertEqual(scheduler.authorization, .denied)
+    }
+    @MainActor func testDeclinedPromptReportsDenialThenSettingsCanRestoreScheduling() async throws {
+        let client = FakeNotificationClient(); client.status = .notDetermined; client.authorizationResult = .denied
+        let scheduler = NotificationScheduler(client: client); let occurrence = item()
+        do { try await scheduler.requestPermission(); XCTFail("Expected denied permission") }
+        catch { XCTAssertEqual((error as? ControlError)?.code, "notifications_disabled") }
+        XCTAssertFalse(scheduler.authorized)
+        client.status = .authorized
+        try await scheduler.requestPermission()
+        await scheduler.sync([occurrence], active: true)
+        XCTAssertTrue(scheduler.authorized)
+        XCTAssertTrue(scheduler.armedIDs.contains(occurrence.id))
+        XCTAssertEqual(client.authorizationRequests, 1)
+    }
+    @MainActor func testOtherAuthorizationErrorsPreserveDiagnosticsAndRefreshStatus() async {
+        let client = FakeNotificationClient(); client.status = .notDetermined
+        client.authorizationResult = .notDetermined
+        client.authorizationFailure = NSError(domain: "NotificationTransport", code: 42)
+        let scheduler = NotificationScheduler(client: client)
+        do { try await scheduler.requestPermission(); XCTFail("Expected transport failure") }
+        catch { XCTAssertEqual((error as NSError).domain, "NotificationTransport"); XCTAssertEqual((error as NSError).code, 42) }
+        XCTAssertEqual(scheduler.authorization, .notDetermined)
+    }
     private func item(type: ReminderType = .system, at: Date = .now.addingTimeInterval(3600)) -> Occurrence {
         let r = Reminder(title: "Test", schedule: ReminderSchedule(rule: .once, date: at), reminderType: type)
         return Occurrence(reminder: r, at: at)

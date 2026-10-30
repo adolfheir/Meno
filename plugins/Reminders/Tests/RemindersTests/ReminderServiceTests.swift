@@ -152,4 +152,71 @@ final class ReminderServiceTests: XCTestCase {
         XCTAssertThrowsError(try ReminderService(directory: directory))
         XCTAssertEqual(try store.rows("PRAGMA user_version").first?.first, "99")
     }
+
+    @MainActor func testWeeklySchedulePersistsRetryAndPartialEditWithoutMovingAnchor() throws {
+        var now = instant
+        let s = try ReminderService(directory: directory, now: { now })
+        var a = args()
+        a["schedule"] = .object(["kind": .string("weekly"), "weekdays": .array([.number(5), .number(6), .number(7)]), "times": .array([.string("10:55"), .string("17:55")]), "timeZone": .string("Asia/Shanghai"), "every": .number(2)])
+        let result = try s.write("reminders_create", arguments: a, source: "cli")
+        try s.preparePlans(catchUp: false)
+        let saved = try s.reminders()[0].schedule
+        XCTAssertEqual(try s.history()[0].scheduledAt, TimeText.parse("2026-10-23T17:55:00+08:00"))
+        now = now.addingTimeInterval(86400)
+        let restarted = try ReminderService(directory: directory, now: { now })
+        XCTAssertTrue(try restarted.write("reminders_create", arguments: a, source: "mcp").replayed)
+        _ = try restarted.write("reminders_update", arguments: ["id": result.original["id"], "note": .string("只改备注"), "requestId": .string("note")], source: "cli")
+        XCTAssertEqual(try restarted.reminders()[0].schedule, saved)
+        XCTAssertEqual(try restarted.reminders().count, 1)
+    }
+
+    @MainActor func testIntervalRecoveryIncludesEachRecentTickOnceAndPauseSkipsTicks() throws {
+        var now = instant
+        let s = try ReminderService(directory: directory, now: { now })
+        var a = args()
+        a["schedule"] = .object(["kind": .string("interval"), "everySeconds": .number(60)])
+        _ = try s.write("reminders_create", arguments: a, source: "cli")
+        try s.preparePlans(catchUp: false)
+        now = instant.addingTimeInterval(181)
+        try s.preparePlans(catchUp: true)
+        XCTAssertEqual(try s.history().filter { $0.state == .planned }.map(\.scheduledAt).sorted(), [60, 120, 180, 240].map { instant.addingTimeInterval(Double($0)) })
+        try s.preparePlans(catchUp: true)
+        XCTAssertEqual(try s.history().count, 4)
+        try s.runtimeStopped()
+        now = instant.addingTimeInterval(361)
+        try s.preparePlans(catchUp: false)
+        try s.preparePlans(catchUp: true)
+        XCTAssertEqual(try s.history().filter { $0.state == .planned }.map(\.scheduledAt), [instant.addingTimeInterval(420)])
+    }
+
+    @MainActor func testRejectedScheduleDoesNotPersistOrConsumeRequestID() throws {
+        let s = try ReminderService(directory: directory, now: { self.instant })
+        var a = args()
+        a["schedule"] = .object(["kind": .string("weekly"), "weekdays": .array([]), "time": .string("09:00")])
+        XCTAssertThrowsError(try s.write("reminders_create", arguments: a, source: "cli"))
+        XCTAssertTrue(try s.reminders().isEmpty)
+        a["schedule"] = .object(["kind": .string("weekly"), "weekdays": .array([.number(5)]), "time": .string("09:00")])
+        XCTAssertFalse(try s.write("reminders_create", arguments: a, source: "cli").replayed)
+    }
+    @MainActor func testTimedPausePersistsSkipsTriggersAndCanResume() throws {
+        var now = instant
+        let s = try ReminderService(directory: directory, now: { now })
+        var a = args(); a["schedule"] = .object(["kind": .string("interval"), "everySeconds": .number(3600)])
+        let result = try s.write("reminders_create", arguments: a, source: "ui")
+        let id = result.original["id"]
+        try s.preparePlans(catchUp: false)
+        let until = instant.addingTimeInterval(86400)
+        _ = try s.write("reminders_update", arguments: ["id": id, "pauseUntil": .string(TimeText.format(until)), "requestId": .string("pause")], source: "ui")
+        try s.preparePlans(catchUp: true)
+        XCTAssertEqual(try s.history().filter { $0.state == .planned }.map(\.scheduledAt), [until])
+        let restarted = try ReminderService(directory: directory, now: { now })
+        XCTAssertEqual(try restarted.reminders()[0].pauseUntil, until)
+        now = until.addingTimeInterval(10)
+        try restarted.preparePlans(catchUp: true)
+        XCTAssertFalse(try restarted.history().contains { $0.state == .planned && $0.scheduledAt < until })
+        XCTAssertTrue(try restarted.history().contains { $0.state == .planned && $0.scheduledAt == until })
+        _ = try restarted.write("reminders_update", arguments: ["id": id, "pauseUntil": .string(""), "requestId": .string("resume")], source: "ui")
+        XCTAssertNil(try restarted.reminders()[0].pauseUntil)
+    }
+
 }

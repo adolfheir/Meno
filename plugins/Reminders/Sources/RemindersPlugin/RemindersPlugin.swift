@@ -53,6 +53,8 @@ public final class RemindersModel: ObservableObject {
         } catch { self.error = "数据读取失败，保留上次载入的事项：" + error.localizedDescription }
     }
     public var permissionLabel: String { scheduler.authorizationLabel }
+    public var notificationsAuthorized: Bool { scheduler.authorized }
+    public var notificationPermissionDenied: Bool { scheduler.authorization == .denied }
     public func refreshPermission() async { await scheduler.refreshPermission() }
     @discardableResult public func focusCurrentReminder(screenID: UInt32? = nil) -> Bool { runtime?.presenter.focus(screenID: screenID) ?? false }
     public func nextTriggerDate(_ reminder: Reminder) -> Date? {

@@ -13,6 +13,11 @@ public enum CLIParser {
     meno reminders add --title 内容 (--in 20m | --at ISO8601 | --daily HH:mm | --weekdays HH:mm) [--type system|fullscreen] [--note 备注] [--enable-plugin] [--request-id ID] [--json]
     meno reminders update <id> [--title 内容] [--in 30m | --at ISO8601 | --daily HH:mm | --weekdays HH:mm] [--type system|fullscreen] [--enabled true|false] [--request-id ID]
     meno reminders cancel <id> [--request-id ID]
+    时间规则：--daily HH:mm[,HH:mm] | --weekdays HH:mm[,HH:mm]
+    --weekly 5,6,7 --times 10:55,17:55 | --monthly 1,15,-1 --time 09:00
+    --yearly 02-29 --time 09:00 | --interval 2h | --schedule '<JSON>'
+    重复选项：--every 2 --timezone Asia/Shanghai --start-at ISO8601 --end-at ISO8601 --exclude YYYY-MM-DD[,YYYY-MM-DD]
+    星期 1=周一、7=周日；月日期 -1=月末。--schedule 支持每月第几个星期几等完整配置。
     meno reminders list [--status all|active|paused|history|cancelled] [--type system|fullscreen] [--from ISO8601] [--to ISO8601] [--limit 50] [--offset 0]
     meno reminders history
     meno apps status [reminders]
@@ -58,24 +63,66 @@ public enum CLIParser {
     var command = ""
     var allowed: Set<String> = []
     var writing = false
+    let scheduleFlags: Set<String> = ["in", "at", "daily", "weekdays", "weekly", "monthly", "yearly", "interval", "schedule", "time", "times", "every", "timezone", "start-at", "end-at", "exclude"]
+    func duration(_ value: String) throws -> Double {
+      guard let match = value.range(of: "^[0-9]+(\\.[0-9]+)?[smhd]$", options: .regularExpression), match == value.startIndex..<value.endIndex,
+        let number = Double(value.dropLast()), number.isFinite, number > 0, let unit = value.last
+      else { throw ControlError("invalid_schedule", "时长使用如 30s、20m、1h、2d。") }
+      let scale: Double = unit == "s" ? 1 : unit == "m" ? 60 : unit == "h" ? 3600 : 86400
+      guard number * scale <= 315_360_000 else { throw ControlError("invalid_schedule", "时长不能超过十年。") }
+      return number * scale
+    }
     func schedule() throws -> JSONValue? {
-      let keys = ["in", "at", "daily", "weekdays"].filter { flags[$0] != nil }
-      guard keys.count <= 1 else {
-        throw ControlError("invalid_schedule", "--in、--at、--daily、--weekdays 互斥。")
+      let selectors = ["in", "at", "daily", "weekdays", "weekly", "monthly", "yearly", "interval", "schedule"]
+      let keys = selectors.filter { flags[$0] != nil }
+      guard keys.count <= 1 else { throw ControlError("invalid_schedule", "只能选择一种时间规则。") }
+      guard let key = keys.first, let value = flags[key] else {
+        if flags.keys.contains(where: { scheduleFlags.contains($0) }) { throw ControlError("invalid_schedule", "时间选项需要同时指定时间规则。") }
+        return nil
       }
-      guard let key = keys.first, let value = flags[key] else { return nil }
-      if key == "in" {
-        guard value.range(of: "^[0-9]+(\\.[0-9]+)?[smhd]$", options: .regularExpression) != nil,
-          let number = Double(value.dropLast()), number.isFinite, number > 0, let unit = value.last
-        else { throw ControlError("invalid_schedule", "--in 使用如 30s、20m、1h、2d。") }
-        let scale: Double = unit == "s" ? 1 : unit == "m" ? 60 : unit == "h" ? 3600 : 86400
-        guard number * scale <= 315_360_000 else {
-          throw ControlError("invalid_schedule", "延迟不能超过十年。")
+      if ["in", "at", "schedule"].contains(key) {
+        guard !flags.keys.contains(where: { scheduleFlags.contains($0) && $0 != key }) else { throw ControlError("invalid_schedule", "此时间规则不能与其他时间参数混用。") }
+        if key == "in" { return .object(["kind": .string("delay"), "afterSeconds": .number(try duration(value))]) }
+        if key == "at" { return .object(["kind": .string("once"), "at": .string(value)]) }
+        guard let data = value.data(using: .utf8), let result = try? JSONDecoder.meno.decode(JSONValue.self, from: data), result.object != nil else { throw ControlError("invalid_schedule", "--schedule 需要 JSON 对象。") }
+        return result
+      }
+      var result: [String: JSONValue] = ["kind": .string(key)]
+      func csv(_ text: String) -> [String] { text.split(separator: ",", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) } }
+      if key == "interval" {
+        guard flags["time"] == nil, flags["times"] == nil, flags["every"] == nil else { throw ControlError("invalid_schedule", "固定间隔不接受钟点或日历周期。") }
+        result["everySeconds"] = .number(try duration(value))
+      } else {
+        let clock: String
+        if key == "daily" || key == "weekdays" {
+          guard flags["time"] == nil, flags["times"] == nil else { throw ControlError("invalid_schedule", "请直接在 --daily 或 --weekdays 后指定时点。") }
+          clock = value
+        } else {
+          guard (flags["time"] != nil) != (flags["times"] != nil) else { throw ControlError("invalid_schedule", "请使用 --time HH:mm 或 --times HH:mm,HH:mm。") }
+          clock = flags["time"] ?? flags["times"]!
         }
-        return .object(["kind": .string("delay"), "afterSeconds": .number(number * scale)])
+        if clock.contains(",") { result["times"] = .array(csv(clock).map(JSONValue.string)) }
+        else { result["time"] = .string(clock) }
+        if key == "weekly" || key == "monthly" {
+          let items = csv(value)
+          guard items.allSatisfy({ Int($0) != nil }) else { throw ControlError("invalid_schedule", "星期或月日期必须为逗号分隔的整数。") }
+          result[key == "weekly" ? "weekdays" : "monthDays"] = .array(items.map { .number(Double(Int($0)!)) })
+        }
+        if key == "yearly" {
+          let parts = value.split(separator: "-", omittingEmptySubsequences: false)
+          guard parts.count == 2, let month = Int(parts[0]), let day = Int(parts[1]) else { throw ControlError("invalid_schedule", "--yearly 使用 MM-DD，例如 02-29。") }
+          result["month"] = .number(Double(month)); result["monthDays"] = .array([.number(Double(day))])
+        }
+        if let every = flags["every"] {
+          guard let n = Int(every), (1...100).contains(n), key != "weekdays" else { throw ControlError("invalid_schedule", "--every 为 1–100，周一至周五规则不接受此选项。") }
+          result["every"] = .number(Double(n))
+        }
       }
-      if key == "at" { return .object(["kind": .string("once"), "at": .string(value)]) }
-      return .object(["kind": .string(key), "time": .string(value)])
+      for (flag, field) in [("timezone", "timeZone"), ("start-at", "startAt"), ("end-at", "endAt")] {
+        if let value = flags[flag] { result[field] = .string(value) }
+      }
+      if let value = flags["exclude"] { result["excludedDates"] = .array(csv(value).map(JSONValue.string)) }
+      return .object(result)
     }
     switch first {
     case "reminders":
@@ -90,7 +137,7 @@ public enum CLIParser {
         }
         command = update ? "reminders_update" : "reminders_create"
         writing = true
-        allowed = ["title", "note", "type", "in", "at", "daily", "weekdays", "request-id"]
+        allowed = Set(["title", "note", "type", "request-id"]).union(scheduleFlags)
         if update {
           args["id"] = .string(positions[2])
           allowed.insert("enabled")

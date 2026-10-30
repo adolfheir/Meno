@@ -156,4 +156,31 @@ final class RemindersRuntimeTests: XCTestCase {
     XCTAssertEqual(try m.receipt(reminder)["armed"], .bool(true))
     await runtime.stop()
   }
+
+  @MainActor func testWeeklySystemQueueAdvancesToSecondTimeAndThenNextDay() async throws {
+    let client = FakeNotificationClient()
+    let m = try model(client)
+    var now = TimeText.parse("2026-10-23T09:00:00+08:00")!
+    m.service.now = { now }
+    _ = try m.service.write("reminders_create", arguments: [
+      "title": .string("周末"), "reminderType": .string("system"), "requestId": .string("weekly"),
+      "schedule": .object(["kind": .string("weekly"), "weekdays": .array([.number(5), .number(6), .number(7)]), "times": .array([.string("10:55"), .string("17:55")]), "timeZone": .string("Asia/Shanghai")]),
+    ], source: "cli")
+    let runtime = RemindersRuntime(model: m, presenter: RecordingPresenter(), isScreenLocked: { false })
+    try await runtime.start()
+    let reminder = try XCTUnwrap(m.service.reminders().first)
+    XCTAssertEqual(try m.receipt(reminder)["armed"], .bool(true))
+    XCTAssertEqual(try m.receipt(reminder)["nextTriggerAt"].string.flatMap(TimeText.parse), TimeText.parse("2026-10-23T10:55:00+08:00"))
+    now = TimeText.parse("2026-10-23T10:56:00+08:00")!
+    await runtime.reconcile()
+    XCTAssertEqual(client.requests.count, 1)
+    XCTAssertEqual(try m.receipt(reminder)["nextTriggerAt"].string.flatMap(TimeText.parse), TimeText.parse("2026-10-23T17:55:00+08:00"))
+    now = TimeText.parse("2026-10-23T17:56:00+08:00")!
+    await runtime.reconcile()
+    XCTAssertEqual(client.requests.count, 1)
+    XCTAssertEqual(try m.receipt(reminder)["nextTriggerAt"].string.flatMap(TimeText.parse), TimeText.parse("2026-10-24T10:55:00+08:00"))
+    XCTAssertEqual(try m.receipt(reminder)["armed"], .bool(true))
+    await runtime.stop()
+    XCTAssertTrue(client.requests.isEmpty)
+  }
 }

@@ -10,9 +10,11 @@ struct RemindersView: View {
     @State private var tab = 0
     @State private var editing: Reminder?
     @State private var search = ""
+    @State private var customPauseItem: Reminder?
+    @State private var customPauseCycles = "1"
     private var visible: [Reminder] {
         model.reminders.filter { reminder in
-            !reminder.isCancelled && (tab == 1 ? !reminder.isEnabled : model.nextTriggerDate(reminder) != nil)
+            !reminder.isCancelled && (tab == 1 ? !reminder.isEnabled : (model.nextTriggerDate(reminder) != nil || (reminder.isEnabled && (reminder.pauseUntil ?? .distantPast) > model.service.now())))
                 && (search.isEmpty || reminder.title.localizedCaseInsensitiveContains(search) || reminder.note.localizedCaseInsensitiveContains(search))
         }.sorted { displayDate($0) < displayDate($1) }
     }
@@ -26,12 +28,13 @@ struct RemindersView: View {
                     Text("到点提醒").font(.system(size: 29, weight: .semibold, design: .rounded))
                 }
                 Spacer()
+                AIConnectionButton()
                 Button {
                     Task { await model.perform("apps_set_enabled", ["appId": .string(MenoIdentity.remindersID), "enabled": .bool(!model.isRunning), "requestId": .string(UUID().uuidString)]) }
                 } label: {
                     HStack(spacing: 7) { Circle().fill(model.isRunning ? MenoPalette.positive : MenoPalette.secondary).frame(width: 6, height: 6); Text(model.isRunning ? "后台运行中" : "后台已暂停").font(.callout) }
                         .padding(.horizontal, 15).padding(.vertical, 11).menoGlassPill(interactive: true)
-                }.buttonStyle(.plain).help(model.isRunning ? "暂停后台提醒，窗口仍可编辑" : "启用后台提醒")
+                }.buttonStyle(MenoQuietButtonStyle()).help(model.isRunning ? "暂停后台提醒，窗口仍可编辑" : "启用后台提醒")
                     .accessibilityIdentifier("reminders.runtime")
             }.padding(.bottom, 22)
             if !model.isRunning {
@@ -91,6 +94,14 @@ struct RemindersView: View {
                     ReminderComposer(model: model, existing: item) { editing = nil }
                 }.padding(30).frame(width: 620).foregroundStyle(MenoPalette.ink).tint(MenoPalette.controlTint)
             }
+            .alert("跳过多个周期", isPresented: Binding(get: { customPauseItem != nil }, set: { if !$0 { customPauseItem = nil } })) {
+                TextField("周期数（1–365）", text: $customPauseCycles)
+                Button("取消", role: .cancel) { customPauseItem = nil }
+                Button("暂停") {
+                    if let item = customPauseItem, let cycles = Int(customPauseCycles.trimmingCharacters(in: .whitespacesAndNewlines)), (1...365).contains(cycles) { pauseCycles(item, count: cycles) }
+                    customPauseItem = nil
+                }.disabled(!(Int(customPauseCycles.trimmingCharacters(in: .whitespacesAndNewlines)).map { (1...365).contains($0) } ?? false))
+            } message: { Text("从下次提醒所在周期开始跳过；在恢复后的首次提醒前一小时恢复。") }
             .task { await model.refreshPermission() }
     }
     private func reminderRow(_ item: Reminder) -> some View {
@@ -99,19 +110,44 @@ struct RemindersView: View {
             Text(displayDate(item).formatted(date: .omitted, time: .shortened)).font(.system(size: 23, weight: .light, design: .rounded)).monospacedDigit().frame(width: 88, alignment: .leading)
             VStack(alignment: .leading, spacing: 7) {
                 Text(item.title).font(.system(size: 15, weight: .medium)).lineLimit(2)
-                HStack(spacing: 7) { Label(item.reminderType.label, systemImage: item.reminderType.symbol); Text("·"); Text(item.schedule.rule.label) }.font(.caption).foregroundStyle(MenoPalette.secondary)
+                HStack(spacing: 7) { Label(item.reminderType.label, systemImage: item.reminderType.symbol); Text("·"); Text(item.schedule.summary) }.font(.caption).foregroundStyle(MenoPalette.secondary)
+                if let until = item.pauseUntil, until > model.service.now() { Text("暂停至 " + until.formatted(date: .abbreviated, time: .shortened)).font(.caption2).foregroundStyle(MenoPalette.secondary) }
                 if let reason = receipt?["blockedReason"].string { Text(reason).font(.caption2).foregroundStyle(MenoPalette.secondary).lineLimit(2) }
             }
             Spacer(minLength: 4)
             Button { editing = item } label: { Image(systemName: "pencil").padding(5) }.buttonStyle(.plain).foregroundStyle(MenoPalette.secondary).help("编辑提醒").accessibilityLabel("编辑 " + item.title)
             Menu {
                 Button("编辑…") { editing = item }
+                if item.isEnabled && item.schedule.rule != .once {
+                    Button("跳过一个周期") { pauseCycles(item, count: 1) }
+                    Button("跳过多个周期…") { customPauseCycles = "1"; customPauseItem = item }
+                    Divider()
+                    Button("暂停一天") { pause(item, days: 1) }
+                    Button("暂停一周") { pause(item, days: 7) }
+                    if let until = item.pauseUntil, until > model.service.now() {
+                        Button("立即恢复") { setPause(item, until: nil) }
+                    }
+                }
                 Button("取消提醒", role: .destructive) { Task { await model.perform("reminders_cancel", ["id": .string(item.id.uuidString), "requestId": .string(UUID().uuidString)]) } }
             } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).frame(width: 23)
             Toggle("启用 " + item.title, isOn: Binding(get: { item.isEnabled }, set: { enabled in
                 Task { await model.perform("reminders_update", ["id": .string(item.id.uuidString), "isEnabled": .bool(enabled), "requestId": .string(UUID().uuidString)]) }
             })).labelsHidden().toggleStyle(.switch).controlSize(.small)
-        }.padding(.horizontal, 18).padding(.vertical, 16).menoCard(cornerRadius: 20)
+        }.padding(.horizontal, 18).padding(.vertical, 16).menoCard(cornerRadius: 20).menoHoverHighlight(cornerRadius: 20)
+    }
+    private func pauseCycles(_ item: Reminder, count: Int) {
+        guard let until = item.schedule.pauseUntilAfterSkipping(cycles: count, now: model.service.now()) else {
+            model.error = "无法计算后续提醒时间，请检查重复规则或结束时间。"
+            return
+        }
+        setPause(item, until: until)
+    }
+    private func pause(_ item: Reminder, days: Int) {
+        guard let until = Calendar.current.date(byAdding: .day, value: days, to: model.service.now()) else { return }
+        setPause(item, until: until)
+    }
+    private func setPause(_ item: Reminder, until: Date?) {
+        Task { await model.perform("reminders_update", ["id": .string(item.id.uuidString), "pauseUntil": .string(until.map(TimeText.format) ?? ""), "requestId": .string(UUID().uuidString)]) }
     }
     private var historyList: some View {
         let items = model.history.filter { $0.scheduledAt <= .now || ![.planned, .submitted, .failed].contains($0.state) }
@@ -137,7 +173,7 @@ struct RemindersView: View {
                 ForEach(model.reminders.filter { reminder in (reminder.isCancelled || (reminder.schedule.rule == .once && reminder.schedule.date <= .now)) && !model.history.contains(where: { $0.reminderID == reminder.id }) }) { item in
                     VStack(alignment: .leading, spacing: 6) {
                         Text(item.title + (item.isCancelled ? " · 已取消" : " · 已到期，未确认")).font(.callout)
-                        Text((item.schedule.rule == .once ? item.schedule.date.formatted(date: .abbreviated, time: .standard) : item.schedule.rule.label + String(format: " %02d:%02d", item.schedule.hour, item.schedule.minute)) + " · " + item.reminderType.label).font(.caption)
+                        Text((item.schedule.rule == .once ? item.schedule.date.formatted(date: .abbreviated, time: .standard) : item.schedule.summary) + " · " + item.reminderType.label).font(.caption)
                     }.foregroundStyle(MenoPalette.secondary).padding(.vertical, 6)
                 }
             }
@@ -172,15 +208,19 @@ struct ReminderComposer: View {
     @State private var seconds: Int? = 600
     @State private var date = Date().addingTimeInterval(600)
     @State private var rule: RepeatRule = .once
+    @State private var scheduleDraft = ScheduleDraft()
     @State private var expanded = false
     @State private var saving = false
+    @State private var showSaved = false
+    @State private var saveSequence = 0
     @State private var lastFingerprint = ""
     @State private var requestID = UUID().uuidString
     @FocusState private var titleFocused: Bool
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 10) {
-                Image(systemName: "plus.circle").foregroundStyle(.secondary).font(.title3)
+                MenoFeedbackSymbol(name: showSaved ? "checkmark.circle.fill" : "plus.circle")
+                    .foregroundStyle(showSaved ? MenoPalette.positive : MenoPalette.secondary).font(.title3)
                 TextField("需要提醒什么？", text: $title).textFieldStyle(.plain).font(.system(size: 18)).focused($titleFocused).onSubmit { Task { await save() } }.accessibilityIdentifier("composer.title")
             }.padding(.bottom, 3)
             MenoGlassGroup {
@@ -197,14 +237,14 @@ struct ReminderComposer: View {
             }
             HStack(spacing: 14) {
                 TimelineView(.periodic(from: .now, by: 30)) { context in
-                    Label((seconds != nil && rule == .once ? "约 " : "") + (seconds != nil && rule == .once ? context.date.addingTimeInterval(Double(seconds!)) : date).formatted(date: .abbreviated, time: .shortened), systemImage: "clock").font(.caption).monospacedDigit().foregroundStyle(MenoPalette.secondary)
+                    Label(seconds != nil && rule == .once ? "约 " + context.date.addingTimeInterval(Double(seconds!)).formatted(date: .abbreviated, time: .shortened) : scheduleDraft.preview(rule: rule, date: date, now: context.date), systemImage: "clock").font(.caption).monospacedDigit().foregroundStyle(MenoPalette.secondary).lineLimit(2)
                 }
                 Spacer(minLength: 0)
                 Menu {
                     Picker("提醒类型", selection: $type) { ForEach(ReminderType.allCases) { Label($0.label, systemImage: $0.symbol).tag($0) } }.pickerStyle(.inline)
                 } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: type.symbol).font(.system(size: 12))
+                        MenoFeedbackSymbol(name: type.symbol).font(.system(size: 12))
                         Text(type.label).font(.system(size: 13))
                         Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold)).foregroundStyle(.secondary)
                     }.padding(.horizontal, 13).padding(.vertical, 9)
@@ -220,18 +260,23 @@ struct ReminderComposer: View {
                     .accessibilityLabel(existing == nil ? "创建提醒" : "保存修改").accessibilityIdentifier("composer.save")
             }
             DisclosureGroup("备注与重复规则", isExpanded: $expanded) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Picker("重复", selection: Binding(get: { rule }, set: { rule = $0; seconds = nil })) { ForEach(RepeatRule.allCases) { Text($0.label).tag($0) } }
-                    DatePicker(rule == .once ? "精确时间" : "每天钟点", selection: Binding(get: { date }, set: { date = $0; seconds = nil }), displayedComponents: rule == .once ? [.date, .hourAndMinute] : [.hourAndMinute])
-                    TextField("备注（可选）", text: $note, axis: .vertical).lineLimit(2...4).textFieldStyle(.roundedBorder)
-                    if rule == .weekdays { Text("周一至周五，不计算节假日或调休。").font(.caption).foregroundStyle(MenoPalette.secondary) }
-                }.padding(.top, 12)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ScheduleEditor(rule: Binding(get: { rule }, set: { rule = $0; seconds = nil }), date: Binding(get: { date }, set: { date = $0; seconds = nil }), draft: $scheduleDraft)
+                        TextField("备注（可选）", text: $note, axis: .vertical).lineLimit(2...4).textFieldStyle(.roundedBorder)
+                    }.padding(.top, 12).padding(.trailing, 8)
+                }.frame(height: rule == .once ? 120 : 300)
             }.font(.caption).foregroundStyle(MenoPalette.secondary)
         }.animation(MenoMotion.layout(reduceMotion: reduceMotion), value: expanded)
+        .task(id: saveSequence) {
+            guard showSaved else { return }
+            do { try await Task.sleep(for: .seconds(1.6)) } catch { return }
+            showSaved = false
+        }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("MenoFocusComposer"))) { _ in titleFocused = true }
         .onAppear {
             if let item = existing { title = item.title; note = item.note; type = item.reminderType; date = item.schedule.date; rule = item.schedule.rule; seconds = nil; expanded = true
-                if rule != .once { date = Calendar.current.date(bySettingHour: item.schedule.hour, minute: item.schedule.minute, second: 0, of: .now) ?? .now }
+                scheduleDraft.load(item.schedule)
             } else { type = model.service.defaultType }
             titleFocused = true
         }
@@ -239,15 +284,17 @@ struct ReminderComposer: View {
     private func save() async {
         guard !saving else { return }; saving = true; defer { saving = false }
         let schedule: JSONValue
-        if rule != .once { schedule = .object(["kind": .string(rule.rawValue), "time": .string(String(format: "%02d:%02d", Calendar.current.component(.hour, from: date), Calendar.current.component(.minute, from: date)))]) }
-        else if let seconds { schedule = .object(["kind": .string("delay"), "afterSeconds": .number(Double(seconds))]) }
-        else { schedule = .object(["kind": .string("once"), "at": .string(TimeText.format(date))]) }
+        do {
+            if rule == .once, let seconds { schedule = .object(["kind": .string("delay"), "afterSeconds": .number(Double(seconds))]) }
+            else { schedule = try scheduleDraft.input(rule: rule, date: date) }
+        } catch { model.error = error.localizedDescription; return }
         var args: [String: JSONValue] = ["title": .string(title), "note": .string(note), "reminderType": .string(type.rawValue), "schedule": schedule]
         if let existing { args["id"] = .string(existing.id.uuidString) }
         let fingerprint = JSONValue.object(args).text()
         if fingerprint != lastFingerprint { requestID = UUID().uuidString; lastFingerprint = fingerprint }
         args["requestId"] = .string(requestID)
         if await model.perform(existing == nil ? "reminders_create" : "reminders_update", args) {
+            showSaved = true; saveSequence += 1
             if existing == nil { title = ""; note = ""; lastFingerprint = ""; titleFocused = true }
             onSaved()
         }

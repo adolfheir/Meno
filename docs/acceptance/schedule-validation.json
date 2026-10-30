@@ -1,0 +1,65 @@
+{
+  "verifiedAt": "2026-10-23T09:49:31.217747+00:00",
+  "configuration": "release",
+  "version": "0.1.0",
+  "buildSourceSHA256": "5516f1e69ce8fd1cc8befa43c1b547e9ccd285c28b6bf1ce510c5cf6999e4131",
+  "binaries": {
+    "Contents/MacOS/Meno": "37188c5cb13e7c81e3fc160cf37cfd48ff5e2c0e64c50c1af1878976fe798eb1",
+    "Contents/Helpers/meno": "39983692c46eff8a76acd4189e8392fdeb38587087f3a302e0ddaad32209d28d",
+    "Contents/Helpers/meno-mcp": "1a0757a802b42903a033d1ab1fe32aa31450e03728a0618e18a436368ad48a73"
+  },
+  "unitTests": {
+    "passed": true,
+    "total": 84,
+    "packages": {
+      "MenoControlProtocol": 7,
+      "MenoPluginKit": 6,
+      "MenoCLIKit": 13,
+      "Reminders": 58
+    },
+    "finalEditorFocusedTests": 2
+  },
+  "integration": {
+    "checks": [
+      "mcp-discovery",
+      "mcp-smoke",
+      "schedule-smoke",
+      "retry-smoke",
+      "runtime-smoke",
+      "sigterm-and-restart"
+    ],
+    "passed": true,
+    "isolatedBundle": true,
+    "hostStopped": true
+  },
+  "installedAppVerifiedAgainstBuildManifest": true,
+  "nativeUI": {
+    "weeklyDaysAndTimeZoneVerified": true,
+    "monthlyOrdinalControlsAndPreviewVerified": true,
+    "previewDismissedWithoutSaving": true,
+    "unsavedDraftRestored": true
+  },
+  "liveStatus": {
+    "activeReminders": 2,
+    "pendingSystemCount": 2,
+    "running": true,
+    "notificationPermission": "authorized",
+    "saved": true,
+    "armed": true,
+    "blockedReason": null,
+    "weekdays": [
+      5,
+      6,
+      7
+    ],
+    "times": [
+      "10:55",
+      "17:55"
+    ],
+    "timeZone": "Asia/Shanghai"
+  },
+  "limitations": [
+    "Delivery of the real scheduled notifications has not yet been observed.",
+    "No lunar calendar, holiday adjustment, cron, or RRULE expressions."
+  ]
+}

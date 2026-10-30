@@ -80,6 +80,43 @@ final class CLIParserTests: XCTestCase {
     XCTAssertEqual(try request(["quit"]).command, "app_quit")
   }
 
+  func testWeeklyMultiTimeAndAdvancedOptions() throws {
+    let r = try request(["reminders", "add", "--title", "周末", "--weekly", "5,6,7", "--times", "10:55,17:55", "--every", "2", "--timezone", "Asia/Shanghai", "--start-at", "2026-10-23T00:00:00+08:00", "--exclude", "2026-12-25,2027-01-01", "--request-id", "weekly-1"])
+    let s = r.arguments["schedule"]!
+    XCTAssertEqual(s["kind"], .string("weekly"))
+    XCTAssertEqual(s["weekdays"], .array([.number(5), .number(6), .number(7)]))
+    XCTAssertEqual(s["times"], .array([.string("10:55"), .string("17:55")]))
+    XCTAssertEqual(s["timeZone"], .string("Asia/Shanghai"))
+    XCTAssertEqual(s["every"], .number(2))
+    XCTAssertEqual(s["excludedDates"].array?.count, 2)
+    XCTAssertEqual(r.arguments["requestId"], .string("weekly-1"))
+  }
+
+  func testMonthYearIntervalAndRawSchedule() throws {
+    let month = try request(["reminders", "add", "--monthly", "1,15,-1", "--time", "09:00"])
+    XCTAssertEqual(month.arguments["schedule"]?["monthDays"], .array([.number(1), .number(15), .number(-1)]))
+    let year = try request(["reminders", "add", "--yearly", "02-29", "--time", "09:00"])
+    XCTAssertEqual(year.arguments["schedule"]?["month"], .number(2))
+    XCTAssertEqual(year.arguments["schedule"]?["monthDays"], .array([.number(29)]))
+    let interval = try request(["reminders", "update", "id", "--interval", "2h"])
+    XCTAssertEqual(interval.arguments["schedule"]?["everySeconds"], .number(7200))
+    let text = #"{"kind":"monthly","ordinal":-1,"weekday":5,"time":"09:00"}"#
+    let raw = try request(["reminders", "add", "--schedule", text])
+    XCTAssertEqual(raw.arguments["schedule"], try JSONDecoder.meno.decode(JSONValue.self, from: Data(text.utf8)))
+  }
+
+  func testScheduleModifiersCannotBeSilentlyIgnored() {
+    let invalid = [
+      ["--weekly", "5,6,7"], ["--weekly", "fri", "--time", "09:00"],
+      ["--weekly", "5", "--time", "09:00", "--times", "10:00"],
+      ["--interval", "1h", "--every", "2"], ["--daily", "09:00", "--time", "10:00"],
+      ["--at", "2027-01-01T00:00:00Z", "--timezone", "UTC"],
+      ["--schedule", "{}", "--every", "2"], ["--schedule", "[]"],
+      ["--times", "09:00"], ["--timezone", "UTC"], ["--yearly", "February", "--time", "09:00"],
+    ]
+    for flags in invalid { XCTAssertThrowsError(try request(["reminders", "add"] + flags), flags.joined(separator: " ")) }
+  }
+
   func testMalformedFlagsAndPositionalsAreRejectedBeforeIPC() {
     let cases = [
       ["--json"], ["unknown"], ["reminders"], ["reminders", "cancel"],

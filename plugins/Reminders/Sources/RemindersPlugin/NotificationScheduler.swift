@@ -1,4 +1,5 @@
 import Foundation
+import MenoControlProtocol
 import RemindersCore
 import UserNotifications
 
@@ -49,7 +50,25 @@ final class NotificationScheduler: ObservableObject {
     var authorizationLabel: String {
         switch authorization { case .authorized, .provisional: "已授权"; case .denied: "未授权"; default: "尚未请求" }
     }
-    func requestPermission() async throws { _ = try await client.requestAuthorization(); authorization = await client.authorizationStatus() }
+    func requestPermission() async throws {
+        await refreshPermission()
+        guard authorization != .denied else { throw permissionDeniedError() }
+        guard !authorized else { return }
+        do { _ = try await client.requestAuthorization() }
+        catch {
+            await refreshPermission()
+            let systemError = error as NSError
+            if authorization == .denied || (systemError.domain == UNErrorDomain && systemError.code == UNError.Code.notificationsNotAllowed.rawValue) {
+                throw permissionDeniedError()
+            }
+            throw error
+        }
+        await refreshPermission()
+        if authorization == .denied { throw permissionDeniedError() }
+    }
+    private func permissionDeniedError() -> ControlError {
+        ControlError("notifications_disabled", "系统通知未获允许，请前往「系统设置 → 通知 → Meno」打开「允许通知」。")
+    }
     func refreshPermission() async { authorization = await client.authorizationStatus() }
     func dismissDelivered(_ id: String) { client.removeDelivered([Self.prefix + id]) }
     func sync(_ occurrences: [Occurrence], active: Bool) async {

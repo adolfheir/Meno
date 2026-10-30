@@ -17,7 +17,7 @@ final class ControlProtocolTests: XCTestCase {
     func testToolCatalogContainsSixStructuredToolsAndExclusiveTimeBranches() throws {
         XCTAssertEqual(ToolCatalog.tools.count, 6)
         XCTAssertEqual(Set(ToolCatalog.tools.compactMap { $0["name"].string }).count, 6)
-        XCTAssertEqual(ToolCatalog.schedule["oneOf"].array?.count, 4)
+        XCTAssertEqual(Set(ToolCatalog.schedule["oneOf"].array!.compactMap { $0["properties"]["kind"]["const"].string }), Set(["once", "delay", "daily", "weekdays", "weekly", "monthly", "yearly", "interval"]))
         for tool in ToolCatalog.tools {
             XCTAssertEqual(tool["inputSchema"]["additionalProperties"].bool, false)
             if !["reminders_list", "apps_get_status"].contains(tool["name"].string!) { XCTAssertTrue(tool["inputSchema"]["required"].array!.contains(.string("requestId"))) }

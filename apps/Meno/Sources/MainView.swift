@@ -48,6 +48,8 @@ struct MenuPopoverView: View {
 struct SettingsView: View {
     @ObservedObject var model: AppModel
     @State private var permissionError: String?
+    @State private var preferenceError: String?
+    @State private var requestingPermission = false
     var body: some View {
         MenoGlassGroup {
         ScrollView {
@@ -75,26 +77,66 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         Text("到点提醒").font(.headline)
                         Picker("新事项默认类型", selection: Binding(get: { reminders.service.defaultType }, set: { type in
-                            Task { do { _ = try await model.execute(ControlRequest(command: "settings_update", arguments: ["defaultReminderType": .string(type.rawValue)], source: "ui")) } catch { permissionError = error.localizedDescription } }
+                            Task {
+                                preferenceError = nil
+                                do { _ = try await model.execute(ControlRequest(command: "settings_update", arguments: ["defaultReminderType": .string(type.rawValue)], source: "ui")) }
+                                catch { preferenceError = error.localizedDescription }
+                            }
                         })) { ForEach(ReminderType.allCases) { Text($0.label).tag($0) } }
-                        HStack { Text("系统通知：" + reminders.permissionLabel); Spacer(); Button("请求通知授权") { Task { do { _ = try await model.execute(ControlRequest(command: "notification_request", source: "ui")) } catch { permissionError = error.localizedDescription } } } }
-                        Button("打开系统通知设置…") { NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension")!) }.buttonStyle(.link)
+                        HStack {
+                            Text("系统通知：" + reminders.permissionLabel)
+                            Spacer()
+                            Button(reminders.notificationsAuthorized ? "已授权" : (reminders.notificationPermissionDenied ? "前往系统设置" : "请求通知授权")) {
+                                if reminders.notificationPermissionDenied { openNotificationSettings() }
+                                else { requestNotificationPermission() }
+                            }.disabled(requestingPermission || reminders.notificationsAuthorized)
+                        }
+                        if reminders.notificationPermissionDenied {
+                            Text("请在「系统设置 → 通知 → Meno」中打开「允许通知」，返回后会自动刷新。").font(.caption).foregroundStyle(MenoPalette.secondary)
+                        }
+                        Button("打开系统通知设置…", action: openNotificationSettings).buttonStyle(.link)
                         Text("未授权时，系统类型仍可保存；全屏提醒独立运行。系统通知的展示遵循专注模式和系统设置。").font(.caption).foregroundStyle(MenoPalette.secondary)
                         if let permissionError { Text(permissionError).font(.caption).foregroundStyle(.red) }
+                        if let preferenceError { Text(preferenceError).font(.caption).foregroundStyle(.red) }
                     }.padding(22).menoCard()
                 }
                 VStack(alignment: .leading, spacing: 13) {
                     Text("连接外部 AI / MCP").font(.headline)
-                    Text("Meno 不运行模型。将此标准 MCP stdio 配置加入你的客户端，即可创建和管理提醒。").font(.callout).foregroundStyle(MenoPalette.secondary)
-                    Text(mcpPath).font(.system(size: 11, design: .monospaced)).textSelection(.enabled).lineLimit(3)
-                    HStack { Button("复制 MCP 配置") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(config, forType: .string) }; Spacer(); Button("打开本地数据目录") { model.openDataDirectory() } }
-                }.padding(22).menoCard()
+                    Text("复制连接提示词，贴给能使用本机工具或 MCP 的 AI，即可连接并管理提醒。").font(.callout).foregroundStyle(MenoPalette.secondary)
+                    HStack {
+                        AIConnectionButton()
+                        Button("复制 MCP 配置") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(connection.mcpConfiguration, forType: .string) }
+                    }
+                    Text(connection.mcpPath).font(.system(size: 11, design: .monospaced)).textSelection(.enabled).lineLimit(3)
+                    Button("打开本地数据目录") { model.openDataDirectory() }
+                }.frame(maxWidth: .infinity, alignment: .leading).padding(22).menoCard()
                 if let error = model.error { Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled) }
                 Text("Meno 0.1.0 · macOS 14+ · 本地运行").font(.caption).foregroundStyle(MenoPalette.muted)
             }.padding(30)
         }.frame(minWidth: 590, minHeight: 620).foregroundStyle(MenoPalette.ink).tint(MenoPalette.controlTint)
         }.menoWindowSurface()
+            .task { await refreshNotificationPermission() }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                Task { await refreshNotificationPermission() }
+            }
     }
-    private var mcpPath: String { Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/meno-mcp").path }
-    private var config: String { JSONValue.object(["mcpServers": .object(["meno": .object(["command": .string(mcpPath), "args": .array([])])])]).text(pretty: true) }
+    private func openNotificationSettings() {
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension")!)
+    }
+    private func requestNotificationPermission() {
+        guard !requestingPermission else { return }
+        requestingPermission = true; permissionError = nil
+        Task {
+            defer { requestingPermission = false }
+            do { _ = try await model.execute(ControlRequest(command: "notification_request", source: "ui")) }
+            catch { permissionError = error.localizedDescription }
+        }
+    }
+    private func refreshNotificationPermission() async {
+        guard let reminders = model.reminders?.model else { return }
+        await reminders.refreshPermission()
+        if reminders.notificationsAuthorized { permissionError = nil }
+        await reminders.reconcile()
+    }
+    private var connection: AIConnectionInfo { AIConnectionInfo(bundleURL: Bundle.main.bundleURL) }
 }

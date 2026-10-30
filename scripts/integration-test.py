@@ -37,7 +37,7 @@ def run(options):
         # A fresh integration instance must not contend for the user's global hotkey.
         (data / "preferences.json").write_text(json.dumps({"schemaVersion": 1, "enabledPlugins": [], "hotkeyEnabled": False}))
         os.chmod(data / "preferences.json", 0o600)
-        for name, extra in [("mcp-smoke", ["--discover-only"]), ("mcp-smoke", []), ("retry-smoke", []), ("runtime-smoke", [])]:
+        for name, extra in [("mcp-smoke", ["--discover-only"]), ("mcp-smoke", []), ("schedule-smoke", []), ("retry-smoke", []), ("runtime-smoke", [])]:
             label = "mcp-discovery" if extra else name
             command = [sys.executable, str(root / "scripts" / (name + ".py")), "--app", str(app), "--output", str(output / (label + ".json")), *extra]
             with (output / (label + ".log")).open("w") as log:
@@ -48,16 +48,25 @@ def run(options):
             print(f"PASS {label}", flush=True)
         # SIGTERM must take the same normal stop path and preserve enabled preference.
         subprocess.run([str(cli), "apps", "enable"], env=env, check=True, capture_output=True)
-        pid = host_pid(app)
-        assert pid is not None, "Host PID missing"
         import signal
-        os.kill(pid, signal.SIGTERM)
-        wait_for_exit(app)
-        assert not (data / "control.sock").exists()
-        result = subprocess.run([str(cli), "apps", "status"], env=env, text=True, capture_output=True, check=True, timeout=35)
-        assert json.loads(result.stdout)["running"] is True
+        for _ in range(3):
+            pid = host_pid(app)
+            assert pid is not None, "Host PID missing"
+            os.kill(pid, signal.SIGTERM)
+            wait_for_exit(app)
+            assert not (data / "control.sock").exists()
+            result = subprocess.run([str(cli), "apps", "status"], env=env, text=True, capture_output=True, check=True, timeout=35)
+            assert json.loads(result.stdout)["running"] is True
         checks.append("sigterm-and-restart")
-        print("PASS sigterm-and-restart", flush=True)
+        print("PASS sigterm-and-restart (3 cycles)", flush=True)
+    except subprocess.CalledProcessError as error:
+        # Captured CLI failures must survive cleanup of the isolated test App.
+        print(f"FAIL command: {error.cmd}; exit={error.returncode}", file=sys.stderr)
+        if error.stdout:
+            print(error.stdout, file=sys.stderr)
+        if error.stderr:
+            print(error.stderr, file=sys.stderr)
+        raise
     finally:
         if cli.exists():
             subprocess.run([str(cli), "quit", "--no-launch"], env=env, capture_output=True, timeout=35)
@@ -66,7 +75,7 @@ def run(options):
                 stopped = True
             except AssertionError:
                 print(f"Test host still running; preserving {work}", file=sys.stderr)
-        (output / "summary.json").write_text(json.dumps({"checks": checks, "passed": len(checks) == 5 and stopped, "isolatedBundle": True, "hostStopped": stopped}, indent=2) + "\n")
+        (output / "summary.json").write_text(json.dumps({"checks": checks, "passed": len(checks) == 6 and stopped, "isolatedBundle": True, "hostStopped": stopped}, indent=2) + "\n")
         if stopped:
             shutil.rmtree(work)
         if not stopped:

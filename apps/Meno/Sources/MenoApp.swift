@@ -54,7 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         UNUserNotificationCenter.current().setNotificationCategories([category])
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "square.stack.3d.up", accessibilityDescription: "Meno")
+            button.image = MenuBarIcon.makeImage()
             button.target = self; button.action = #selector(togglePopover); button.toolTip = "Meno · 到点提醒"
         }
         popover = NSPopover(); popover.behavior = .transient
