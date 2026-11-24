@@ -1,0 +1,30 @@
+[Unit]
+Description=Meno reminder synchronization
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=meno-sync
+StateDirectoryMode=0700
+LoadCredential=device-token:/etc/meno-sync/device-token
+LoadCredential=server.crt:/etc/meno-sync/server.crt
+LoadCredential=server.key:/etc/meno-sync/server.key
+ExecStart=/usr/bin/python3 /opt/meno-sync/server.py --database /var/lib/meno-sync/meno.sqlite --host 0.0.0.0 --port 18443 --tls-cert ${CREDENTIALS_DIRECTORY}/server.crt --tls-key ${CREDENTIALS_DIRECTORY}/server.key --token-file ${CREDENTIALS_DIRECTORY}/device-token
+Restart=on-failure
+RestartSec=3
+UMask=0077
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

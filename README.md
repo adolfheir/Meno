@@ -1,6 +1,6 @@
 # Meno
 
-一个常驻 macOS 菜单栏的本地功能宿主。首个子应用「到点提醒」支持单次、每天、周一至周五提醒，每条事项独立选择系统通知或全屏提醒。关闭窗口不停止后台；暂停后台后仍可查看、编辑、保存，窗口会明确提示没有进入提醒调度。Meno 不包含 AI，不需要模型或密钥。
+Meno 是一个支持 macOS 和 iPhone 的提醒应用。macOS 版常驻菜单栏，提供系统通知和全屏提醒，iPhone 版使用系统通知。两端共用提醒规则，连接私有同步服务后自动交换提醒和处理记录。
 
 默认使用与全屏提醒相近的中性烟灰背景、浅色文字和原生液态玻璃，仍可在设置中选择明亮或跟随系统。窗口有独立背景，不会透出其他应用的文字。
 
@@ -30,6 +30,23 @@ GitHub Actions 在 Apple Silicon 与 Intel 上执行检查、测试、Release �
 如需本机开发证书签名，执行 `MENO_SIGN_IDENTITY='<签名证书名称或 SHA-1>' scripts/build.sh`。构建输出包括 `dist/Meno.app`、`dist/Meno.zip` 和依赖、源文件摘要、签名信息所在的 `dist/build-info.json`。更换正在运行的构建前先执行 `dist/Meno.app/Contents/Helpers/meno quit`，正常退出会取消待触发任务并保存启用偏好。
 
 首次启动只出现菜单栏图标，点击图标中的「到点提醒」打开独立窗口，右侧开关只控制后台。快速创建输入内容、点选时间、选择提醒类型后按回车；展开区域提供精确时间、重复和备注，列表支持编辑、暂停、取消及历史。默认全局快捷键是 **⌃⌥⇧M**，设置中可以更改或关闭，注册冲突时会提示。系统通知需要在设置页主动请求授权，全屏提醒不依赖此权限。
+
+## 跨设备同步
+
+带部署配置的安装包打开后自动连接预设的同步服务，同步新增、编辑、暂停、取消、确认和延后。两端的本地 SQLite 在断网时仍可读写。独立修改的字段会合并，同字段冲突按逻辑版本和设备标识确定结果。取消状态永久保留，另一端确认过的提醒会撤销相应的待提醒记录。
+
+iPhone 打开应用时自动同步，后台由 iOS 安排刷新。已经安排到 iPhone 的系统通知可以离线触发，后台期间的新提醒要在设备收到数据后才能安排。
+
+应用从仓库根目录的私有 `MenoSync.json` 打包部署配置。服务地址和访问凭据保存在私有配置中。含部署配置的安装包以及服务端 SQLite 仅供个人使用。生成 iOS 工程需要 XcodeGen：
+
+```sh
+scripts/generate-ios.sh
+open apps/MenoIOS/MenoIOS.xcodeproj
+```
+
+iOS 17+。真机运行需在 Xcode 选择自己的开发签名。可在两端设置的「跨设备同步」里查看最近同步或暂停同步。
+
+服务端使用 Python 3 和 SQLite，部署单元在 `services/sync/deploy/`。systemd 服务名为 `meno-sync.service`，数据位于 `/var/lib/meno-sync/meno.sqlite`。公网监听要求 TLS 和安装包凭据，服务证书由 `meno-sync-certificate.timer` 定期检查并在临近过期时续签。开发期间可运行 `python3 services/sync/server.py`，把开发安装包的 `MenoSync.json` 设为 `{"endpoint":"http://localhost:8765"}`，使用本机隔离环境。
 
 ## 外部接入
 

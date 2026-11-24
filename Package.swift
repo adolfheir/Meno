@@ -23,6 +23,7 @@ let package = Package(
                 .product(name: "MenoPluginKit", package: "MenoPluginKit"),
                 .product(name: "RemindersPlugin", package: "Reminders"),
                 .product(name: "RemindersCore", package: "Reminders"),
+                .product(name: "RemindersSyncUI", package: "Reminders"),
                 .product(name: "MenoControlProtocol", package: "MenoControlProtocol"),
             ],
             path: "apps/Meno/Sources"

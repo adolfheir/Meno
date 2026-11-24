@@ -37,6 +37,7 @@ final class AppModel: ObservableObject {
     let host: PluginHost
     let dataDirectory = MenoIdentity.dataDirectory
     let reminders: RemindersPlugin?
+    let sync: ReminderSync?
     let storageError: Error?
     var onOpenApp: ((String) -> Void)?
     var onHotkeyChange: (() -> Void)?
@@ -64,6 +65,8 @@ final class AppModel: ObservableObject {
             module = loaded; moduleError = nil
         } catch { module = nil; moduleError = error }
         reminders = module; storageError = moduleError
+        sync = module.map { ReminderSync(service: $0.model.service) }
+        sync?.onPull = { [weak module] in await module?.model.reconcile() }
         let enabled = (try? module?.model.service.enabledPreference()) == true
         host = PluginHost(definitions: [PluginDefinition(descriptor: RemindersPlugin.descriptor, makePlugin: { _ in
             guard let module else { throw moduleError ?? ControlError("storage_error", "提醒数据不可用。") }; return module
@@ -132,6 +135,14 @@ final class AppModel: ObservableObject {
                 if #available(macOS 26.0, *) { status["liquidGlassAvailable"] = .bool(true) }
                 else { status["liquidGlassAvailable"] = .bool(false) }
                 status["keyWindowTitle"] = NSApp.keyWindow.map { .string($0.title) } ?? .null
+                if let sync {
+                    status["sync"] = .object([
+                        "enabled": .bool(sync.isEnabled),
+                        "endpoint": sync.configuredAddress.map(JSONValue.string) ?? .null,
+                        "status": .string(sync.status),
+                        "lastSyncedAt": sync.lastSyncedAt.map { .string(TimeText.format($0)) } ?? .null,
+                    ])
+                }
                 status["screens"] = .array(NSScreen.screens.map { .object(["id": .number(Double(($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0)), "frame": .string(NSStringFromRect($0.frame))]) })
             }
             return .object(status)

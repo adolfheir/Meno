@@ -25,6 +25,14 @@ trap 'rm -rf "$stage"' EXIT
 app="$stage/Meno.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Helpers" "$app/Contents/Resources"
 cp apps/Meno/Info.plist "$app/Contents/Info.plist"
+sync_config="${MENO_SYNC_CONFIG:-$root/MenoSync.json}"
+if [[ -f "$sync_config" ]]; then
+  python3 scripts/configure-sync-plist.py "$app/Contents/Info.plist" "$sync_config"
+  install -m 600 "$sync_config" "$app/Contents/Resources/MenoSync.json"
+elif [[ -n "${MENO_SYNC_CONFIG:-}" ]]; then
+  printf '找不到同步部署配置：%s\n' "$sync_config" >&2
+  exit 2
+fi
 cp "$bin/MenoHost" "$app/Contents/MacOS/Meno"
 cp "$bin/meno" "$app/Contents/Helpers/meno"
 cp "$bin/meno-mcp" "$app/Contents/Helpers/meno-mcp"

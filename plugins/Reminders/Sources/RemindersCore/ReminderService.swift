@@ -11,6 +11,7 @@ public struct WriteOutcome {
 public final class ReminderService: ObservableObject {
     public let store: ReminderStore
     @Published public private(set) var revision = 0
+    public var onLocalMutation: (() -> Void)?
     public var now: () -> Date
     public var calendar: () -> Calendar = { .autoupdatingCurrent }
     public init(directory: URL, now: @escaping () -> Date = { .now }) throws {
@@ -73,6 +74,7 @@ public final class ReminderService: ObservableObject {
                 return result
             }
             var reminder: Reminder
+            var previous: Reminder?
             if command == "reminders_create" {
                 let title = try Self.requiredString(args, "title", max: 500)
                 let schedule = try parseSchedule(args["schedule"], at: current)
@@ -84,8 +86,9 @@ public final class ReminderService: ObservableObject {
             } else {
                 let idText = try Self.requiredString(args, "id", max: 100)
                 guard let id = UUID(uuidString: idText), let found = try store.reminders().first(where: { $0.id == id }) else { throw ControlError("reminder_not_found", "未找到这个提醒 ID。") }
+                previous = found
                 reminder = found
-                if command == "reminders_cancel" { reminder.isCancelled = true; reminder.isEnabled = false }
+                if command == "reminders_cancel" { reminder.isCancelled = true; reminder.isEnabled = false; reminder.pauseUntil = nil }
                 else {
                     guard !reminder.isCancelled else { throw ControlError("reminder_cancelled", "事项已取消，请创建新事项。") }
                     guard args.keys.contains(where: { !["id", "requestId"].contains($0) }) else { throw ControlError("invalid_argument", "至少提供一个要修改的字段。") }
@@ -104,10 +107,22 @@ public final class ReminderService: ObservableObject {
                         reminder.pauseUntil = nil
                     }
                 }
-                reminder.revision += 1; reminder.updatedAt = current
+            }
+            let fields = reminder.editedFields(since: previous)
+            let replicating = try store.metadata(Self.syncServerKey) != nil
+            if previous != nil && (!replicating || !fields.isEmpty) {
+                reminder.revision += 1
+                reminder.updatedAt = current
                 for var occurrence in try store.occurrences() where occurrence.reminderID == reminder.id && occurrence.state.isPending {
-                    occurrence.state = .cancelled; occurrence.updatedAt = current; occurrence.detail = "提醒已修改、暂停或取消"; try store.save(occurrence)
+                    occurrence.state = .cancelled
+                    occurrence.updatedAt = current
+                    occurrence.detail = "提醒已修改、暂停或取消"
+                    try store.save(occurrence)
                 }
+            }
+            if replicating {
+                let clock = try store.recordEdit(fields, for: reminder.id)
+                reminder.revision = try clock.generation(legacy: reminder.revision)
             }
             try store.save(reminder)
             if args["enablePlugin"]?.bool == true { try store.setMetadata("app_enabled", "true") }
@@ -116,6 +131,7 @@ public final class ReminderService: ObservableObject {
             return result
         }
         changed()
+        if command != "apps_set_enabled" { onLocalMutation?() }
         return WriteOutcome(original: original, replayed: false, enableRequested: args["enablePlugin"]?.bool == true)
     }
 
@@ -164,7 +180,7 @@ public final class ReminderService: ObservableObject {
                 for date in dates {
                     var occurrence = Occurrence(reminder: reminder, at: date, now: current)
                     if let old = try store.occurrences().first(where: { $0.id == occurrence.id }) {
-                        if old.state == .cancelled && old.detail == "时区或系统时间变化重算" && date > current { try store.save(occurrence) }
+                        if old.state == .cancelled && [Self.remoteChangeDetail, "时区或系统时间变化重算"].contains(old.detail ?? "") && date > current { try store.save(occurrence) }
                         continue
                     }
                     if date <= current && (!catchUp || current.timeIntervalSince(date) > 1800) {
@@ -183,13 +199,53 @@ public final class ReminderService: ObservableObject {
     }
     public func handleOccurrence(_ id: String, snooze: Bool) throws {
         try store.transaction {
-            guard var occurrence = try store.occurrences().first(where: { $0.id == id }) else { throw ControlError("occurrence_not_found", "未找到这次触发。") }
-            guard [.presenting, .delivered, .submitted].contains(occurrence.state),
-                let reminder = try store.reminders().first(where: { $0.id == occurrence.reminderID }), !reminder.isCancelled, reminder.isEnabled else { throw ControlError("occurrence_inactive", "这次提醒已经处理或撤销。") }
-            occurrence.state = snooze ? .snoozed : .acknowledged; occurrence.updatedAt = now(); try store.save(occurrence)
-            if snooze { try store.save(Occurrence(reminder: reminder, at: now().addingTimeInterval(300), isSnooze: true, now: now())) }
+            guard let occurrence = try store.occurrence(id) else {
+                throw ControlError("occurrence_not_found", "未找到这次触发。")
+            }
+            try recordAction(occurrence, snooze: snooze)
         }
         changed()
+        onLocalMutation?()
+    }
+
+    public func handleNotification(reminderID: UUID, revision: Int, occurrenceID: String, at: Date, snooze: Bool) throws {
+        try store.transaction {
+            if let occurrence = try store.occurrence(occurrenceID) {
+                try recordAction(occurrence, snooze: snooze)
+                return
+            }
+            guard let reminder = try store.reminders().first(where: { $0.id == reminderID }),
+                  reminder.revision == revision, at <= now().addingTimeInterval(1) else {
+                throw ControlError("occurrence_inactive", "这次提醒已经处理或撤销。")
+            }
+            var occurrence = Occurrence(reminder: reminder, at: at, now: now())
+            guard occurrence.id == occurrenceID else {
+                throw ControlError("occurrence_not_found", "未找到这次触发。")
+            }
+            occurrence.state = .submitted
+            try recordAction(occurrence, snooze: snooze)
+        }
+        changed()
+        onLocalMutation?()
+    }
+
+    private func recordAction(_ original: Occurrence, snooze: Bool) throws {
+        guard [.presenting, .delivered, .submitted, .planned].contains(original.state),
+              let reminder = try store.reminders().first(where: { $0.id == original.reminderID }),
+              !reminder.isCancelled, reminder.isEnabled, reminder.revision == original.reminderRevision else {
+            throw ControlError("occurrence_inactive", "这次提醒已经处理或撤销。")
+        }
+        guard original.state != .planned || original.isSnooze && original.scheduledAt <= now() else {
+            throw ControlError("occurrence_inactive", "这次提醒尚未到期。")
+        }
+        let current = now()
+        var occurrence = original
+        occurrence.state = snooze ? .snoozed : .acknowledged
+        occurrence.updatedAt = current
+        let followUp = snooze ? Occurrence(reminder: reminder, at: current.addingTimeInterval(300), isSnooze: true, now: current) : nil
+        try store.save(occurrence)
+        if let followUp { try store.save(followUp) }
+        try store.save(SyncAction(occurrence: occurrence, snooze: followUp))
     }
     public func runtimeStopped() throws {
         try store.transaction {

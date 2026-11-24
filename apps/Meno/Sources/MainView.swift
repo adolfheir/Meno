@@ -2,6 +2,7 @@ import MenoControlProtocol
 import MenoPluginKit
 import RemindersCore
 import RemindersPlugin
+import RemindersSyncUI
 import SwiftUI
 
 @MainActor
@@ -54,7 +55,7 @@ struct SettingsView: View {
         MenoGlassGroup {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 8) { Text("Meno 设置").font(.system(size: 28, weight: .semibold, design: .rounded)); Text("按需运行，所有事项保存在这台 Mac。").foregroundStyle(MenoPalette.secondary) }
+                VStack(alignment: .leading, spacing: 8) { Text("Meno 设置").font(.system(size: 28, weight: .semibold, design: .rounded)); Text("提醒保存在此 Mac，可开启跨设备同步。").foregroundStyle(MenoPalette.secondary) }
                 VStack(alignment: .leading, spacing: 18) {
                     Picker("外观", selection: Binding(get: { model.preferences.appearance ?? "dark" }, set: { model.preferences.appearance = $0; model.savePreferences() })) {
                         Text("雾灰").tag("dark"); Text("明亮").tag("light"); Text("跟随系统").tag("system")
@@ -73,6 +74,12 @@ struct SettingsView: View {
                     }
                     Text(model.hotkeyStatus).font(.caption).foregroundStyle(MenoPalette.secondary)
                 }.padding(22).menoCard()
+                if let sync = model.sync {
+                    VStack(alignment: .leading, spacing: 13) {
+                        Text("跨设备同步").font(.headline)
+                        SyncSettings(sync: sync)
+                    }.padding(22).menoCard()
+                }
                 if let reminders = model.reminders?.model {
                     VStack(alignment: .leading, spacing: 18) {
                         Text("到点提醒").font(.headline)

@@ -16,3 +16,7 @@ test-results/
 *.p12
 *.p8
 *.mobileprovision
+MenoIOS.xcodeproj/
+
+/apps/MenoIOS/Info.plist
+/MenoSync.json

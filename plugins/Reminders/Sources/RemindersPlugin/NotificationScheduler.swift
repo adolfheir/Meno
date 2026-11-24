@@ -87,6 +87,9 @@ final class NotificationScheduler: ObservableObject {
         authorization = await client.authorizationStatus()
         let existing = await client.pendingRequests().filter { $0.identifier.hasPrefix(Self.prefix) }
         delivered = await client.deliveredIDs()
+        let handled = items.filter { $0.state == .acknowledged || $0.state == .snoozed }
+            .map { Self.prefix + $0.id }.filter { delivered.contains($0) }
+        if !handled.isEmpty { client.removeDelivered(handled); delivered.subtract(handled) }
         armedIDs = []; failures = [:]
         guard running, active, snapshot == revision, authorized else { client.remove(existing.map(\.identifier)); pendingCount = 0; return }
         let now = now()
@@ -96,7 +99,7 @@ final class NotificationScheduler: ObservableObject {
         let selected = Array(eligible.prefix(Self.capacity))
         let wanted = Set(selected.map { Self.prefix + $0.id })
         client.remove(existing.map(\.identifier).filter { !wanted.contains($0) })
-        let existingIDs = Set(existing.map(\.identifier))
+        let existingByID = Dictionary(uniqueKeysWithValues: existing.map { ($0.identifier, $0.content) })
         for item in eligible.dropFirst(Self.capacity) { failures[item.id] = "系统通知滚动队列已满（60 条），较近计划触发后自动补入" }
         for item in selected {
             guard active, snapshot == revision else { return }
@@ -105,9 +108,10 @@ final class NotificationScheduler: ObservableObject {
             do {
                 // Submission intent is durable before crossing the OS boundary.
                 if item.state != .submitted { try beforeSubmit?(item.id) }
-                if !existingIDs.contains(id) {
+                let body = item.note.isEmpty ? "到提醒时间了。" : item.note
+                if existingByID[id]?.title != item.title || existingByID[id]?.body != body {
                     let content = UNMutableNotificationContent(); content.title = item.title
-                    content.body = item.note.isEmpty ? "到提醒时间了。" : item.note
+                    content.body = body
                     content.sound = .default; content.categoryIdentifier = "MENO_REMINDER"
                     content.userInfo = ["meno.pluginID": RemindersPlugin.descriptor.id, "meno.occurrenceID": item.id]
                     let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, item.scheduledAt.timeIntervalSince(self.now())), repeats: false)

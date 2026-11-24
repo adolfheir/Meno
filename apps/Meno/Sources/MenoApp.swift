@@ -64,6 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         configureHotkey()
         Task { [self] in
             await model.host.restore(); model.ready = true
+            model.sync?.start()
             do {
                 let server = LocalControlServer(path: MenoIdentity.socketPath) { [weak self] request in
                     guard let self else { return ControlResponse(id: request.id, error: ControlError("host_closed", "宿主已关闭。")) }
@@ -78,7 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard model != nil else { return .terminateNow }
         if terminating { return .terminateLater }
-        terminating = true; model.ready = false; control?.stop(); hotkey = nil; popover?.close()
+        terminating = true; model.ready = false; control?.stop(); model.sync?.stop(); hotkey = nil; popover?.close()
         Task { await model.host.shutdown(); sender.reply(toApplicationShouldTerminate: true) }
         return .terminateLater
     }

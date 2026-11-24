@@ -1,0 +1,57 @@
+name: MenoIOS
+options:
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  Reminders:
+    path: ../../plugins/Reminders
+  MenoControlProtocol:
+    path: ../../packages/MenoControlProtocol
+targets:
+  MenoIOS:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+      - Assets.xcassets
+      - path: ../../MenoSync.json
+        optional: true
+        buildPhase: resources
+    dependencies:
+      - package: Reminders
+        product: RemindersCore
+      - package: Reminders
+        product: RemindersSyncUI
+      - package: MenoControlProtocol
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: Meno
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        NSLocalNetworkUsageDescription: 连接你的私有服务以在设备间同步提醒。
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            "127.0.0.0/8":
+              NSExceptionAllowsInsecureHTTPLoads: true
+            "10.0.0.0/8":
+              NSExceptionAllowsInsecureHTTPLoads: true
+            "172.16.0.0/12":
+              NSExceptionAllowsInsecureHTTPLoads: true
+            "192.168.0.0/16":
+              NSExceptionAllowsInsecureHTTPLoads: true
+            "100.64.0.0/10":
+              NSExceptionAllowsInsecureHTTPLoads: true
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.meno.ios.sync-refresh
+        UIBackgroundModes:
+          - fetch
+        UILaunchScreen: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.meno.ios
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+    scheme: {}

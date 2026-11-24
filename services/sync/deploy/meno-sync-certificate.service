@@ -1,0 +1,6 @@
+[Unit]
+Description=Renew the TLS certificate for Meno Sync
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/meno-sync/renew-cert.sh

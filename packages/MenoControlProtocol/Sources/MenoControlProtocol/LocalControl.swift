@@ -1,9 +1,6 @@
 import Darwin
 import Foundation
 
-private func socketFailure(_ context: String) -> ControlError {
-    ControlError("ipc_error", "\(context)：\(String(cString: strerror(errno)))")
-}
 public enum PrivateDirectory {
     public static func prepare(_ url: URL) throws {
         let fm = FileManager.default
@@ -16,6 +13,11 @@ public enum PrivateDirectory {
         } else { try fm.createDirectory(at: url, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700]) }
         try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: url.path)
     }
+}
+
+#if os(macOS)
+private func socketFailure(_ context: String) -> ControlError {
+    ControlError("ipc_error", "\(context)：\(String(cString: strerror(errno)))")
 }
 public final class InstanceLock {
     private var descriptor: Int32 = -1
@@ -198,3 +200,4 @@ public struct LocalControlClient: Sendable {
         }
     }
 }
+#endif

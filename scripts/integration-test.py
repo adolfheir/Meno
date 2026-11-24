@@ -27,6 +27,8 @@ def run(options):
     stopped = False
     try:
         subprocess.run(["ditto", str(source), str(app)], check=True)
+        # Keep fixture reminders outside the private deployment.
+        (app / "Contents/Resources/MenoSync.json").unlink(missing_ok=True)
         plist = app / "Contents/Info.plist"
         info = plistlib.loads(plist.read_bytes())
         info["CFBundleIdentifier"] = "com.meno.integration." + work.name

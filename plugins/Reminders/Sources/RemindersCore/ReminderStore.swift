@@ -26,6 +26,8 @@ public final class ReminderStore {
                 try execute("CREATE TABLE IF NOT EXISTS occurrences (id TEXT PRIMARY KEY, reminder_id TEXT NOT NULL, at REAL NOT NULL, payload TEXT NOT NULL)")
                 try execute("CREATE INDEX IF NOT EXISTS occurrence_time ON occurrences(at)")
                 try execute("CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, result TEXT NOT NULL)")
+                try execute("CREATE TABLE IF NOT EXISTS sync_clocks (id TEXT PRIMARY KEY, payload TEXT NOT NULL)")
+                try execute("CREATE TABLE IF NOT EXISTS sync_actions (id TEXT PRIMARY KEY, payload TEXT NOT NULL)")
                 try execute("CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
                 try execute("PRAGMA user_version=1")
             }
