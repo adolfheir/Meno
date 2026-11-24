@@ -22,11 +22,12 @@ private final class MenoHostingView<Content: View>: NSHostingView<Content> {
 }
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNUserNotificationCenterDelegate {
     private var model: AppModel!
     private var windows: [String: NSWindow] = [:]
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
+    private var popoverClickMonitors: [Any] = []
     private var terminating = false
     private var instanceLock: InstanceLock?
     private var control: LocalControlServer?
@@ -58,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             button.target = self; button.action = #selector(togglePopover); button.toolTip = "Meno · 到点提醒"
         }
         popover = NSPopover(); popover.behavior = .transient
+        popover.delegate = self
         popover.contentViewController = NSHostingController(rootView: MenuPopoverView(model: model, onOpen: { [weak self] in self?.showWindow($0) }, onQuit: { NSApp.terminate(nil) }))
         configureHotkey()
         Task { [self] in
@@ -84,6 +86,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         guard let button = statusItem.button else { return }
         if popover.isShown { popover.performClose(nil) }
         else { popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY) }
+    }
+    func popoverWillShow(_ notification: Notification) {
+        let clicks: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        popoverClickMonitors = [
+            NSEvent.addGlobalMonitorForEvents(matching: clicks) { [weak self] _ in
+                self?.popover.performClose(nil)
+            },
+            NSEvent.addLocalMonitorForEvents(matching: clicks) { [weak self] event in
+                if let self,
+                   event.window !== self.popover.contentViewController?.view.window,
+                   event.window !== self.statusItem.button?.window {
+                    self.popover.performClose(nil)
+                }
+                return event
+            },
+        ].compactMap { $0 }
+    }
+    func popoverWillClose(_ notification: Notification) {
+        popoverClickMonitors.forEach(NSEvent.removeMonitor)
+        popoverClickMonitors.removeAll()
     }
     @objc private func focusReminder() { model?.reminders?.model.focusCurrentReminder() }
     private func showWindow(_ id: String) {
